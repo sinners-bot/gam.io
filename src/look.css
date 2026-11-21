@@ -1,0 +1,95 @@
+/* ================= GAM.IO look: logos, cards, pages (loads last) ================= */
+html{background:#0f0c29}body{background-attachment:fixed!important;min-height:100vh}
+/* ---- logo tiles ---- */
+.art.gx-art{background:
+  radial-gradient(120% 90% at 50% 115%,color-mix(in srgb,var(--tg) 45%,transparent),transparent 60%),
+  radial-gradient(60% 60% at 20% 10%,#ffffff22,transparent 70%),
+  linear-gradient(160deg,var(--ta),var(--tb))!important;isolation:isolate}
+.art.gx-art::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,#ffffff07 0 2px,transparent 2px 14px);z-index:-1}
+.art.gx-art::after{content:"";position:absolute;left:50%;top:55%;width:70%;height:70%;transform:translate(-50%,-50%);background:radial-gradient(circle,color-mix(in srgb,var(--tg) 55%,transparent),transparent 65%);filter:blur(10px);z-index:-1;opacity:.75}
+.gx-ic{height:88%;max-height:118px;width:auto;filter:drop-shadow(0 8px 10px #0008);transition:transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.art.sm.gx-art{border-radius:12px;box-shadow:inset 0 0 0 1px #ffffff1a}
+.art.sm .gx-ic{height:96%;filter:drop-shadow(0 2px 3px #0008)}
+.brand-i .gx-mark{width:58px;height:58px;filter:drop-shadow(0 6px 18px #9d5cffaa);animation:gx-float 4s ease-in-out infinite}
+@keyframes gx-float{50%{transform:translateY(-4px) rotate(-3deg)}}
+.brand-t{font-size:24px;letter-spacing:2px;background:linear-gradient(90deg,#fff,#e4d6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand-t span{background:linear-gradient(90deg,#c58bff,#7c4dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---- game cards ---- */
+.gcard{background:linear-gradient(180deg,#221a55,#181243);border:1px solid #ffffff14;border-radius:22px;box-shadow:0 10px 24px #0005;transition:transform .25s cubic-bezier(.2,.9,.3,1.2),box-shadow .25s,border-color .25s}
+.gcard .art{height:132px;border-radius:0}
+.gcard:hover{transform:translateY(-6px);border-color:#ffffff33;box-shadow:0 18px 40px #0008,0 0 0 1px #ffffff22,0 0 40px color-mix(in srgb,var(--tg,#7c4dff) 30%,transparent)}
+.gcard:hover .gx-ic{transform:scale(1.08) rotate(-3deg)}
+.gcard:active{transform:translateY(-2px) scale(.98)}
+.gc-b{padding:12px 14px 14px}
+.gc-b b{font-size:16px;letter-spacing:.2px}
+.gx-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.gx-meta i{font-style:normal;font-size:11px;font-weight:800;color:#cfc6ff;background:#ffffff10;border-radius:99px;padding:3px 8px}
+.gx-meta i.pl{color:#9fe8ff}
+.tag{top:10px;right:10px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;backdrop-filter:blur(4px)}
+.tag.t-popular{background:linear-gradient(90deg,#3ddc84,#1fb86a);color:#03210f}
+.tag.t-new{background:linear-gradient(90deg,#4de1ff,#2fa8ff);color:#031a30}
+.tag.t-hot{background:linear-gradient(90deg,#ff8a3d,#ff3b6b);color:#fff}
+.gc-b .tag{top:-12px}
+
+/* ---- category chips ---- */
+.gx-cats{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.gx-cat{padding:8px 14px;border-radius:99px;background:#ffffff0d;border:1px solid #ffffff14;font-weight:800;font-size:14px;color:#d9d2ff;transition:.2s}
+.gx-cat em{font-style:normal;font-size:11px;opacity:.6;margin-left:2px}
+.gx-cat:hover{background:#ffffff18}
+.gx-cat.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 6px 18px #7c4dff66}
+
+/* ---- hero ---- */
+.hero{background:radial-gradient(60% 90% at 22% 60%,#9d5cff66,transparent 60%),radial-gradient(50% 70% at 95% 0%,#ff4d8d33,transparent 60%),linear-gradient(135deg,#3a1f99,#24136b 55%,#1a1050)!important;border:1px solid #ffffff1f;box-shadow:0 20px 50px #0007,inset 0 1px 0 #ffffff22}
+.gx-hero{position:relative}
+.gx-fl{position:absolute;filter:drop-shadow(0 14px 18px #0009)}
+.gx-fl .gx-ic{height:100%;width:100%;max-height:none;filter:none}
+.gx-fl.f0{left:22%;top:16%;width:46%;height:62%;animation:gx-bob 5s ease-in-out infinite}
+.gx-fl.f1{left:2%;top:8%;width:28%;height:44%;animation:gx-bob 6s ease-in-out -1s infinite}
+.gx-fl.f2{left:4%;top:56%;width:28%;height:40%;animation:gx-bob 5.5s ease-in-out -2s infinite}
+.gx-fl.f3{left:64%;top:52%;width:28%;height:42%;animation:gx-bob 6.5s ease-in-out -3s infinite}
+.gx-fl.f4{left:66%;top:4%;width:24%;height:38%;animation:gx-bob 7s ease-in-out -1.5s infinite}
+@keyframes gx-bob{50%{transform:translateY(-10px) rotate(3deg)}}
+.hero h1{letter-spacing:-1px}
+.hero h1 em{background:linear-gradient(90deg,#ffd84d,#ff8ad8 50%,#b28bff);-webkit-background-clip:text;background-clip:text}
+
+/* ---- shell ---- */
+.side{background:linear-gradient(180deg,#201856f2,#120d33f2);box-shadow:0 20px 50px #0006,inset 0 1px 0 #ffffff14}
+.ni{position:relative}
+.ni.on{background:linear-gradient(90deg,#7c4dff,#b05cff);box-shadow:0 10px 26px #7c4dff66,inset 0 1px 0 #ffffff33}
+.ni:not(.on):hover{background:#ffffff10;transform:translateX(2px)}
+.sh h3{font-size:19px;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
+.sh h3::before{content:"";width:6px;height:20px;border-radius:3px;background:linear-gradient(180deg,#ffd84d,#ff4d8d)}
+.panel{box-shadow:0 14px 34px #0005}
+.btn.primary{background:linear-gradient(90deg,#7c4dff,#b05cff);box-shadow:0 8px 22px #7c4dff66,inset 0 1px 0 #ffffff40}
+.btn.primary:hover{filter:brightness(1.1);box-shadow:0 10px 28px #9d5cff88,inset 0 1px 0 #ffffff40}
+
+/* ---- tables list uses the logos ---- */
+.gx-t .art{width:70px;height:70px;border-radius:16px;box-shadow:0 6px 16px #0007}
+.gx-iv .art{border-radius:10px}
+
+/* ---- lobby ---- */
+.lobby>.art{height:190px;width:min(560px,94%);border-radius:26px;box-shadow:0 20px 50px #0008,inset 0 0 0 1px #ffffff1f}
+.lobby>.art .gx-ic{max-height:170px}
+.seat{background:linear-gradient(180deg,#221a55,#181243);transition:transform .2s}
+.seat.on{box-shadow:0 12px 28px #0007,0 0 0 1px #ffffff1f}
+.seat:not(.on){border:2px dashed #a78bfa33;background:#ffffff06}
+.seat:not(.on):hover{border-color:#a78bfa77}
+.botrow{background:linear-gradient(90deg,#ffffff0a,#ffffff05);border-radius:18px}
+.ghead h2 .art.sm{width:44px;height:44px}
+.ghead h2{font-size:24px;letter-spacing:.3px}
+
+/* ---- phones ---- */
+@media (max-width:760px){
+  .grid,.grid.all{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .gcard .art{height:108px}
+  .gc-b{padding:10px 11px 12px}.gc-b b{font-size:14px}
+  .gx-meta i{font-size:10px;padding:2px 7px}
+  .gx-cats{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-right:-12px}
+  .gx-cat{flex:none}
+  .hero{grid-template-columns:1fr!important}
+  .gx-hero{height:170px;min-height:170px}
+  .gx-fl.f0{left:30%;width:40%;height:80%;top:6%}.gx-fl.f1{left:6%;width:24%;height:52%}.gx-fl.f2{left:10%;top:52%;width:22%;height:46%}.gx-fl.f3{left:70%;top:48%;width:24%;height:50%}.gx-fl.f4{left:72%;top:2%;width:20%;height:44%}
+  .lobby>.art{height:150px}
+}
+.tag.t-new{display:none}
