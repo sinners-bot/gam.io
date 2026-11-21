@@ -1,4 +1,4 @@
-// Game Night client (vanilla JS, no build step)
+// GAM.IO client (vanilla JS, no build step)
 var params = new URLSearchParams(location.search);
 var inDiscord = params.has("frame_id");
 var app = document.getElementById("app");
@@ -65,7 +65,10 @@ async function boot() {
       sdk = new mod.DiscordSDK(cfg.clientId);
       await sdk.ready();
       status("Signing you in…");
-      var auth = await sdk.commands.authorize({ client_id: cfg.clientId, response_type: "code", state: "", prompt: "none", scope: ["identify"] });
+      var auth;
+      // rpc.activities.write lets GAM.IO show what you're playing on your Discord profile (rich presence)
+      try { auth = await sdk.commands.authorize({ client_id: cfg.clientId, response_type: "code", state: "", prompt: "none", scope: ["identify", "rpc.activities.write"] }); }
+      catch (e1) { auth = await sdk.commands.authorize({ client_id: cfg.clientId, response_type: "code", state: "", prompt: "none", scope: ["identify"] }); }
       var tr = await fetch("/api/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: auth.code }) });
       var tok = await tr.json();
       if (!tok.access_token) throw new Error("Sign-in failed");
@@ -90,7 +93,7 @@ async function boot() {
 }
 function askName() {
   return new Promise(function (res) {
-    app.innerHTML = '<div class="splash"><div class="logo">🎲</div><h1>Game Night</h1><p>Browser test mode — pick a name</p><form id="nf"><input id="nm" maxlength="24" placeholder="Your name" autofocus><button class="btn primary">Play</button></form></div>';
+    app.innerHTML = '<div class="splash"><div class="logo">🎲</div><h1>GAM.IO</h1><p>Browser test mode — pick a name</p><form id="nf"><input id="nm" maxlength="24" placeholder="Your name" autofocus><button class="btn primary">Play</button></form></div>';
     document.getElementById("nf").onsubmit = function (e) {
       e.preventDefault();
       var v = document.getElementById("nm").value.trim() || "Guest";
@@ -130,7 +133,7 @@ function prof() { return S.me || { xp: 0, level: 1, into: 0, need: 300, title: "
 // ---------- shell ----------
 function sidebar() {
   var p = prof(), u = meUser();
-  return '<aside class="side"><div class="brand"><div class="brand-i">🎮</div><div class="brand-t">GAME<span>NIGHT</span></div></div><nav class="snav">' +
+  return '<aside class="side"><div class="brand"><div class="brand-i">🎮</div><div class="brand-t">GAM<span>.IO</span></div></div><nav class="snav">' +
     NAV.map(function (n) { return '<button class="ni' + (S.view === n[0] && !gameShown() ? " on" : "") + '" data-act="nav" data-view="' + n[0] + '">' + ICON[n[0]] + "<span>" + n[1] + "</span></button>"; }).join("") +
     '</nav><div class="lvl" data-act="nav" data-view="profile">' + avatar(u, 46, "#ffd84d") + '<div><b>Level ' + p.level + "</b><small>" + esc(p.title) + '</small></div><div class="bar"><i style="width:' + Math.round((p.into / p.need) * 100) + '%"></i></div><em>' + p.into + " / " + p.need + ' XP</em></div><div class="pill"><i></i>In call · ' + S.members.length + "</div></aside>";
 }
@@ -186,7 +189,7 @@ function page() {
   var pct = Math.min(100, Math.round((p.today / p.goal) * 100)), done = p.today >= p.goal;
   var recent = p.recent.length ? p.recent.map(function (r) { return '<div class="rg">' + art(r.game, true) + '<b>' + meta(r.game).name + "</b><span>" + ago(r.at) + ' · <em class="' + (r.won ? "win" : "loss") + '">' + (r.won ? "Won" : "Played") + "</em></span></div>"; }).join("") : '<p class="muted">Your games will show up here.</p>';
   return liveBanner() +
-    '<section class="hero"><div class="hero-art"><i class="neon a"></i><i class="neon b"></i><i class="neon c"></i><span class="die">🎲</span><span class="pawn">♟︎</span></div><div class="hero-t"><h1>Your game night<br><em>starts here.</em></h1><p>Pick a game and play together with everyone in your call.</p><div class="hero-b"><button class="btn primary lg" data-act="nav" data-view="games">▶&nbsp; Play with friends</button><button class="btn dark lg" data-act="quick">⤮&nbsp; Quick match</button></div></div></section>' +
+    '<section class="hero"><div class="hero-art"><i class="neon a"></i><i class="neon b"></i><i class="neon c"></i><span class="die">🎲</span><span class="pawn">♟︎</span></div><div class="hero-t"><h1>Your next game<br><em>starts here.</em></h1><p>Pick a game and play together with everyone in your call.</p><div class="hero-b"><button class="btn primary lg" data-act="nav" data-view="games">▶&nbsp; Play with friends</button><button class="btn dark lg" data-act="quick">⤮&nbsp; Quick match</button></div></div></section>' +
     '<div class="sh"><h3>⭐ Featured Games</h3><button class="link" data-act="nav" data-view="games">View all →</button></div><div class="grid">' + feat + "</div>" +
     '<div class="row"><div class="panel daily"><div><h3>🏆 Daily Challenge</h3><p>Win ' + p.goal + ' games today</p><div class="prog"><div class="bar gold"><i style="width:' + pct + '%"></i></div><b>' + Math.min(p.today, p.goal) + " / " + p.goal + "</b></div>" + (done ? '<p class="gold">Completed — nice!</p>' : "") + '</div><div class="chest">' + (done ? "🎉" : "🎁") + "</div></div>" +
     '<div class="panel recent"><div class="sh"><h3>🕒 Your Recent Games</h3><button class="link" data-act="nav" data-view="profile">See all →</button></div><div class="rgs">' + recent + "</div></div></div>";

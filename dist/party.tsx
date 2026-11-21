@@ -9,7 +9,7 @@ const JS: string = String.raw`// ---------- Game Night UI plugin: party games --
     { id: "trivia", name: "Trivia", cat: "Quiz", players: "1–10 players", tag: "New", icon: "🧠" },
     { id: "wordhunt", name: "Word Hunt", cat: "Word", players: "1–8 players", tag: "New", icon: "🔤" },
     { id: "spy", name: "Who's the Spy?", cat: "Party", players: "3–10 players", tag: "New", icon: "🕶️" });
-  var skew = 0, pending = null, pen = { c: "#ffffff", w: 8 }, drawing = false;
+  var skew = 0, pending = null, pen = { c: "#111111", w: 8 }, drawing = false;
   function left(st) { return Math.max(0, Math.ceil((st.deadline - (Date.now() + skew)) / 1000)); }
   function clock(st) { return '<span class="clock" data-dl="' + st.deadline + '">⏱ ' + left(st) + "s</span>"; }
   setInterval(function () { document.querySelectorAll("[data-dl]").forEach(function (el) { el.textContent = "⏱ " + Math.max(0, Math.ceil((+el.getAttribute("data-dl") - (Date.now() + skew)) / 1000)) + "s"; }); }, 250);
@@ -91,8 +91,9 @@ const JS: string = String.raw`// ---------- Game Night UI plugin: party games --
       var st = g.state, me = g.seat, drawer = st.drawer === me, ph = st.phase;
       var top = ph === "pick" ? (drawer ? "Pick a word to draw:" : nm(g, st.drawer) + " is choosing a word…") : drawer || st.word ? "<b class=word>" + esc(st.word.toUpperCase()) + "</b>" : '<b class="word mask">' + st.mask.split("").join(" ") + "</b> <small>(" + st.len + ")</small>";
       var choices = st.choices ? '<div class="actions">' + st.choices.map(function (w, i) { return '<button class="btn primary" data-act="dpick" data-i="' + i + '">' + esc(w) + "</button>"; }).join("") + "</div>" : "";
-      var tools = drawer && ph === "draw" ? '<div class="tools">' + ["#ffffff", "#ff4d8d", "#ffd84d", "#6dff9a", "#4dd4ff", "#b05cff", "#ff9f43", "#111111"].map(function (c) { return '<button class="sw' + (pen.c === c ? " on" : "") + '" style="background:' + c + '" data-act="pen" data-c="' + c + '"></button>'; }).join("") +
-        [3, 8, 18, 40].map(function (w) { return '<button class="sz' + (pen.w === w ? " on" : "") + '" data-act="pen" data-w="' + w + '"><i style="width:' + Math.min(w, 24) + "px;height:" + Math.min(w, 24) + 'px"></i></button>'; }).join("") +
+      var tools = drawer && ph === "draw" ? '<div class="tools">' + PALETTE.map(function (c) { return '<button class="sw' + (pen.c === c ? " on" : "") + '" style="background:' + c + '" data-act="pen" data-c="' + c + '"></button>'; }).join("") +
+        '<button class="sw er' + (pen.c === "#ffffff" ? " on" : "") + '" data-act="pen" data-c="#ffffff" title="Eraser">🧽</button>' +
+        [3, 8, 18, 40].map(function (w) { return '<button class="sz' + (pen.w === w ? " on" : "") + '" data-act="pen" data-w="' + w + '"><i style="width:' + Math.min(w, 24) + "px;height:" + Math.min(w, 24) + "px;background:" + (pen.c === "#ffffff" ? "#ccc" : pen.c) + '"></i></button>'; }).join("") +
         '<button class="ghost" data-act="dundo">↶ Undo</button><button class="ghost" data-act="dclear">🗑 Clear</button></div>' : "";
       var chat = st.chat.map(function (c) {
         if (c.sys) return '<p class="sys">' + names(g, c.sys) + "</p>";
@@ -101,7 +102,7 @@ const JS: string = String.raw`// ---------- Game Night UI plugin: party games --
       }).join("");
       var canGuess = me >= 0 && !drawer;
       return scoreBar(g, st.score) + '<div class="dg"><div class="dgmain"><div class="dghead"><span>Round ' + Math.min(st.round, st.rounds) + "/" + st.rounds + " · ✏️ " + nm(g, st.drawer) + "</span><span>" + top + "</span>" + (g.phase === "playing" && ph !== "reveal" ? clock(st) : "<span></span>") + "</div>" + choices +
-        '<canvas id="dgc" width="1000" height="700" class="' + (drawer && ph === "draw" ? "mine" : "") + '"></canvas>' + tools + '</div><div class="panel dgchat"><div class="msgs" id="dg-msgs">' + chat + "</div>" +
+        '<div id="dgc-slot" class="dgslot' + (drawer && ph === "draw" ? " mine" : "") + '"></div>' + tools + '</div><div class="panel dgchat"><div class="msgs" id="dg-msgs">' + chat + "</div>" +
         (canGuess ? '<form class="wform" data-form="dg"><input id="dg-in" autocomplete="off" maxlength="60" placeholder="' + (st.guessed.indexOf(me) >= 0 ? "You got it! Chat…" : "Type your guess…") + '"><button class="btn primary">↵</button></form>' : "") + "</div></div>";
     },
   };
@@ -141,36 +142,86 @@ const JS: string = String.raw`// ---------- Game Night UI plugin: party games --
     baseRender();
     if (keep) { var el = document.getElementById(keep.id); if (el) { el.value = keep.v; el.focus(); try { el.setSelectionRange(keep.s, keep.s); } catch (e) {} } }
     var m2 = document.getElementById("dg-msgs"); if (m2 && stick) m2.scrollTop = m2.scrollHeight;
-    paint();
+    attachCanvas();
   };
-  function paint() {
-    var cv = document.getElementById("dgc"), g = S.game;
-    if (!cv || !g || !g.state) return;
-    var ctx = cv.getContext("2d"); ctx.fillStyle = "#14112f"; ctx.fillRect(0, 0, cv.width, cv.height);
-    var all = g.state.strokes.concat(pending && pending.p.length > 3 ? [pending] : []);
-    all.forEach(function (s) {
-      ctx.strokeStyle = s.c; ctx.lineWidth = s.w; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath();
-      for (var i = 0; i < s.p.length; i += 2) { var x = s.p[i], y = s.p[i + 1] * 0.7; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
-      if (s.p.length === 2) ctx.lineTo(s.p[0] + 0.1, s.p[1] * 0.7);
-      ctx.stroke();
-    });
+  // ---- Draw & Guess canvas: one persistent white canvas; strokes are painted incrementally ----
+  var PALETTE = ["#111111", "#7a7a7a", "#ff3b4f", "#ff9f43", "#ffd84d", "#21c45e", "#2f7dff", "#7c4dff", "#ff6bcb", "#8b5a2b"];
+  var CV = null, CTX = null, cvGid = 0, drawnN = 0, drawnV = -1, sid = 0, last = null, sent = 0;
+  function strokeOn(ctx, st) {
+    var p = st.p; if (!p || p.length < 2) return;
+    ctx.strokeStyle = st.c; ctx.lineWidth = st.w; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath();
+    ctx.moveTo(p[0], p[1] * 0.7);
+    if (p.length === 2) ctx.lineTo(p[0] + 0.1, p[1] * 0.7);
+    else {
+      for (var i = 2; i < p.length - 2; i += 2) ctx.quadraticCurveTo(p[i], p[i + 1] * 0.7, (p[i] + p[i + 2]) / 2, ((p[i + 1] + p[i + 3]) / 2) * 0.7);
+      ctx.lineTo(p[p.length - 2], p[p.length - 1] * 0.7);
+    }
+    ctx.stroke();
   }
-  function pos(e) { var cv = document.getElementById("dgc"), r = cv.getBoundingClientRect(); return [Math.round(((e.clientX - r.left) / r.width) * 1000), Math.round(((e.clientY - r.top) / r.height) * 1000)]; }
+  var shown = []; // strokes currently painted on the canvas
+  function repaint(st) { CTX.fillStyle = "#ffffff"; CTX.fillRect(0, 0, 1000, 700); st.strokes.forEach(function (x) { strokeOn(CTX, x); }); shown = st.strokes.slice(); drawnN = shown.length; drawnV = st.v || 0; }
+  function attachCanvas() {
+    var slot = document.getElementById("dgc-slot"), g = S.game;
+    if (!slot || !g || g.type !== "draw" || !g.state) return;
+    if (!CV || cvGid !== g.id) { CV = document.createElement("canvas"); CV.id = "dgc"; CV.width = 1000; CV.height = 700; CTX = CV.getContext("2d"); cvGid = g.id; drawnN = 0; drawnV = -1; shown = []; }
+    CV.className = slot.classList.contains("mine") ? "mine" : "";
+    slot.appendChild(CV);
+    var st = g.state;
+    if (drawing) return; // the drawer's own canvas is already up to date while drawing
+    var amDrawer = g.seat >= 0 && st.drawer === g.seat;
+    if ((st.v || 0) !== drawnV) repaint(st);
+    else if (st.strokes.length < shown.length) { if (amDrawer) st.strokes = shown.slice(); else repaint(st); } // my last chunks are still on their way to the server
+    else { for (var i = shown.length; i < st.strokes.length; i++) strokeOn(CTX, st.strokes[i]); shown = st.strokes.slice(); drawnN = shown.length; }
+  }
+  // strokes from the drawer arrive as small "ink" messages and are painted straight away, without a re-render
+  function hookInk(sock) {
+    if (!sock || sock.__ink) return; sock.__ink = 1;
+    var base = sock.onmessage;
+    sock.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.t === "ink") {
+        var g = S.game; if (!g || g.id !== m.gid || !g.state || !g.state.strokes) return;
+        g.state.strokes.push(m.s);
+        if (CV && cvGid === g.id && shown.length === g.state.strokes.length - 1) { strokeOn(CTX, m.s); shown.push(m.s); drawnN = shown.length; }
+        return;
+      }
+      if (base) base.call(sock, ev);
+    };
+  }
+  var baseConnect = connect;
+  connect = function () { baseConnect(); hookInk(ws); };
+  if (typeof ws !== "undefined" && ws) hookInk(ws);
+  function pos(e) { var r = CV.getBoundingClientRect(); return [Math.max(0, Math.min(1000, Math.round(((e.clientX - r.left) / r.width) * 1000))), Math.max(0, Math.min(1000, Math.round(((e.clientY - r.top) / r.height) * 1000)))]; }
   function flush(end) {
-    if (!pending || pending.p.length < 4) { if (end) pending = null; return; }
-    send({ t: "move", action: "stroke", s: { c: pending.c, w: pending.w, p: pending.p } });
-    var lx = pending.p[pending.p.length - 2], ly = pending.p[pending.p.length - 1];
-    pending = end ? null : { c: pen.c, w: pen.w, p: [lx, ly] };
+    var g = S.game;
+    if (pending && pending.p.length >= 4) {
+      var chunk = { c: pending.c, w: pending.w, p: pending.p, sid: pending.sid };
+      send({ t: "move", action: "stroke", s: chunk });
+      shown.push(chunk); drawnN = shown.length; if (g && g.state && g.state.strokes) g.state.strokes = shown.slice(); // already on screen
+      var lx = pending.p[pending.p.length - 2], ly = pending.p[pending.p.length - 1];
+      pending = end ? null : { c: pending.c, w: pending.w, p: [lx, ly], sid: pending.sid };
+    } else if (end && pending && pending.p.length === 2) {
+      pending.p.push(pending.p[0], pending.p[1]); flush(true); return; // a single dot
+    } else if (end) pending = null;
   }
-  setInterval(function () { if (drawing) flush(false); }, 90);
+  setInterval(function () { if (drawing) flush(false); }, 50);
   app.addEventListener("pointerdown", function (e) {
     if (e.target.id !== "dgc" || !e.target.classList.contains("mine")) return;
-    drawing = true; var p = pos(e); pending = { c: pen.c, w: pen.w, p: [p[0], p[1]] }; e.preventDefault();
+    drawing = true; sid++; var p = pos(e); last = p; pending = { c: pen.c, w: pen.w, p: [p[0], p[1]], sid: Date.now() % 1e9 + sid };
+    CTX.fillStyle = pen.c; CTX.beginPath(); CTX.arc(p[0], p[1] * 0.7, pen.w / 2, 0, Math.PI * 2); CTX.fill();
+    try { e.target.setPointerCapture(e.pointerId); } catch (er) {}
+    e.preventDefault();
   });
   document.addEventListener("pointermove", function (e) {
-    if (!drawing) return; var p = pos(e); pending.p.push(Math.max(0, Math.min(1000, p[0])), Math.max(0, Math.min(1000, p[1]))); paint();
+    if (!drawing || !CV) return;
+    var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; if (!evs.length) evs = [e];
+    CTX.strokeStyle = pending.c; CTX.lineWidth = pending.w; CTX.lineCap = "round"; CTX.lineJoin = "round"; CTX.beginPath(); CTX.moveTo(last[0], last[1] * 0.7);
+    evs.forEach(function (ev) { var p = pos(ev); if (Math.abs(p[0] - last[0]) + Math.abs(p[1] - last[1]) < 2) return; CTX.lineTo(p[0], p[1] * 0.7); pending.p.push(p[0], p[1]); last = p; });
+    CTX.stroke();
+    if (pending.p.length > 360) flush(false);
   });
-  document.addEventListener("pointerup", function () { if (drawing) { drawing = false; flush(true); } });
+  document.addEventListener("pointerup", function () { if (drawing) { drawing = false; flush(true); attachCanvas(); } });
+  document.addEventListener("pointercancel", function () { if (drawing) { drawing = false; flush(true); } });
 
   app.addEventListener("submit", function (e) {
     var f = e.target.getAttribute("data-form"); if (!f) return;
@@ -241,7 +292,8 @@ const CSS: string = String.raw`/* party games */
 .dgmain{flex:1;min-width:300px;max-width:760px;display:flex;flex-direction:column;gap:8px}
 .dghead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-weight:700;font-size:14px}
 .word{font-size:20px;letter-spacing:2px;color:var(--gold)}.word.mask{color:#fff;letter-spacing:3px}
-#dgc{width:100%;aspect-ratio:10/7;border-radius:18px;border:1px solid var(--line);background:#14112f;touch-action:none;box-shadow:0 0 30px #7c4dff33}#dgc.mine{cursor:crosshair;border-color:var(--gold)}
+#dgc{display:block;width:100%;aspect-ratio:10/7;border-radius:18px;border:3px solid #ffffff22;background:#fff;touch-action:none;box-shadow:0 10px 30px #0008,0 0 30px #7c4dff33}#dgc.mine{cursor:crosshair;border-color:var(--gold)}.dgslot{width:100%}
+.sw.er{background:#fff;font-size:15px;display:flex;align-items:center;justify-content:center}
 .tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:center}
 .sw{width:30px;height:30px;border-radius:50%;border:3px solid #ffffff33}.sw.on{border-color:#fff;box-shadow:0 0 10px #fff}
 .sz{width:36px;height:36px;border-radius:10px;background:#ffffff10;display:flex;align-items:center;justify-content:center}.sz i{background:#fff;border-radius:50%;display:block}.sz.on{background:#ffffff30}
@@ -496,7 +548,7 @@ export default function register(api: any) {
   const DRAW_T = 80000;
   function dgStart(s: any) {
     s.drawer = s.order[s.ri % s.order.length]; s.phase = "pick"; s.choices = shuffle(WORDS.slice()).slice(0, 3); s.word = "";
-    s.strokes = []; s.guessed = {}; s.deadline = now() + 12000; s.pts = 0;
+    s.strokes = []; s.total = 0; s.v = (s.v || 0) + 1; s.guessed = {}; s.deadline = now() + 12000; s.pts = 0;
   }
   function dgDraw(s: any, i: number) { s.word = s.choices[i] || s.choices[0]; s.phase = "draw"; s.deadline = now() + DRAW_T; s.chat.push({ sys: "{" + s.drawer + "} is drawing!" }); }
   function dgReveal(s: any) { s.phase = "reveal"; s.deadline = now() + 5000; s.chat.push({ sys: "The word was " + s.word.toUpperCase() + "." }); }
@@ -515,7 +567,7 @@ export default function register(api: any) {
         const idx: number[] = []; for (let k = 0; k < s.word.length && idx.length < show; k += 3) idx.push(k);
         mask = s.word.split("").map((ch: string, k: number) => (ch === " " ? " " : idx.includes(k) ? ch : "_")).join("");
       }
-      return { phase: s.phase, drawer: s.drawer, round: s.ri + 1, rounds: s.rounds, deadline: s.deadline, now: now(), strokes: s.strokes, score: s.score,
+      return { phase: s.phase, drawer: s.drawer, round: s.ri + 1, rounds: s.rounds, deadline: s.deadline, now: now(), strokes: s.strokes, v: s.v || 0, score: s.score,
         guessed: Object.keys(s.guessed).map(Number), chat: s.chat.slice(-40), word: know ? s.word : "", mask, len: s.word.length,
         choices: seat === s.drawer && s.phase === "pick" ? s.choices : null };
     },
@@ -523,12 +575,14 @@ export default function register(api: any) {
       if (m.action === "pick") { if (seat !== s.drawer || s.phase !== "pick") return { err: "Not now" }; dgDraw(s, Number(m.i)); return {}; }
       if (m.action === "stroke" || m.action === "clear" || m.action === "undo") {
         if (seat !== s.drawer || s.phase !== "draw") return { err: "Only the drawer can draw" };
-        if (m.action === "clear") { s.strokes = []; return {}; }
-        if (m.action === "undo") { s.strokes.pop(); return {}; }
+        // v changes whenever strokes are removed, so clients know to repaint from scratch
+        if (m.action === "clear") { s.strokes = []; s.v = (s.v || 0) + 1; return {}; }
+        if (m.action === "undo") { const last = s.strokes[s.strokes.length - 1]; if (last) { const sid = last.sid; while (s.strokes.length && s.strokes[s.strokes.length - 1].sid === sid) s.strokes.pop(); } s.v = (s.v || 0) + 1; return {}; }
         const st = m.s || {}, p = Array.isArray(st.p) ? st.p.slice(0, 400).map((x: any) => Math.max(0, Math.min(1000, Math.round(+x || 0)))) : [];
-        const total = s.strokes.reduce((a: number, x: any) => a + x.p.length, 0);
-        if (p.length < 2 || total > 40000) return {};
-        s.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(st.c) ? st.c : "#ffffff", w: [3, 8, 18, 40].includes(+st.w) ? +st.w : 8, p }); return {};
+        s.total = s.total || 0;
+        if (p.length < 2 || s.total > 60000) return {};
+        s.total += p.length;
+        s.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(st.c) ? st.c : "#111111", w: [3, 8, 18, 40, 70].includes(+st.w) ? +st.w : 8, p, sid: Math.floor(+st.sid || 0) }); return {};
       }
       if (m.action === "guess") {
         const text = String(m.text || "").trim().slice(0, 60);

@@ -593,6 +593,15 @@ const server = Bun.serve({
       let msg: any; try { msg = JSON.parse(String(raw)); } catch { return; }
       if (msg.t === "ping") return;
       if (online(room, user, msg)) return;
+      // Draw & Guess pen strokes: apply and relay just the new stroke, instead of re-sending the whole game to everyone
+      if (msg.t === "move" && msg.action === "stroke" && room.game && room.game.type === "draw" && room.game.phase === "playing") {
+        const g = room.game, seat = g.seats.indexOf(user.id), st = g.state, n = st.strokes.length;
+        if (seat < 0) return;
+        const res = GAMES.draw.move(st, seat, msg);
+        if (res.err) { ws.send(JSON.stringify({ t: "err", msg: res.err })); return; }
+        if (st.strokes.length > n) { const ink = JSON.stringify({ t: "ink", gid: g.id, n: st.strokes.length, s: st.strokes[st.strokes.length - 1] }); for (const m of room.members.values()) if (m.user.id !== user.id) for (const s2 of m.sockets) s2.send(ink); }
+        return;
+      }
       const err = handle(room, user, msg);
       if (err === "__done") return;
       if (err) ws.send(JSON.stringify({ t: "err", msg: err }));

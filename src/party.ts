@@ -245,7 +245,7 @@ export default function register(api: any) {
   const DRAW_T = 80000;
   function dgStart(s: any) {
     s.drawer = s.order[s.ri % s.order.length]; s.phase = "pick"; s.choices = shuffle(WORDS.slice()).slice(0, 3); s.word = "";
-    s.strokes = []; s.guessed = {}; s.deadline = now() + 12000; s.pts = 0;
+    s.strokes = []; s.total = 0; s.v = (s.v || 0) + 1; s.guessed = {}; s.deadline = now() + 12000; s.pts = 0;
   }
   function dgDraw(s: any, i: number) { s.word = s.choices[i] || s.choices[0]; s.phase = "draw"; s.deadline = now() + DRAW_T; s.chat.push({ sys: "{" + s.drawer + "} is drawing!" }); }
   function dgReveal(s: any) { s.phase = "reveal"; s.deadline = now() + 5000; s.chat.push({ sys: "The word was " + s.word.toUpperCase() + "." }); }
@@ -264,7 +264,7 @@ export default function register(api: any) {
         const idx: number[] = []; for (let k = 0; k < s.word.length && idx.length < show; k += 3) idx.push(k);
         mask = s.word.split("").map((ch: string, k: number) => (ch === " " ? " " : idx.includes(k) ? ch : "_")).join("");
       }
-      return { phase: s.phase, drawer: s.drawer, round: s.ri + 1, rounds: s.rounds, deadline: s.deadline, now: now(), strokes: s.strokes, score: s.score,
+      return { phase: s.phase, drawer: s.drawer, round: s.ri + 1, rounds: s.rounds, deadline: s.deadline, now: now(), strokes: s.strokes, v: s.v || 0, score: s.score,
         guessed: Object.keys(s.guessed).map(Number), chat: s.chat.slice(-40), word: know ? s.word : "", mask, len: s.word.length,
         choices: seat === s.drawer && s.phase === "pick" ? s.choices : null };
     },
@@ -272,12 +272,14 @@ export default function register(api: any) {
       if (m.action === "pick") { if (seat !== s.drawer || s.phase !== "pick") return { err: "Not now" }; dgDraw(s, Number(m.i)); return {}; }
       if (m.action === "stroke" || m.action === "clear" || m.action === "undo") {
         if (seat !== s.drawer || s.phase !== "draw") return { err: "Only the drawer can draw" };
-        if (m.action === "clear") { s.strokes = []; return {}; }
-        if (m.action === "undo") { s.strokes.pop(); return {}; }
+        // v changes whenever strokes are removed, so clients know to repaint from scratch
+        if (m.action === "clear") { s.strokes = []; s.v = (s.v || 0) + 1; return {}; }
+        if (m.action === "undo") { const last = s.strokes[s.strokes.length - 1]; if (last) { const sid = last.sid; while (s.strokes.length && s.strokes[s.strokes.length - 1].sid === sid) s.strokes.pop(); } s.v = (s.v || 0) + 1; return {}; }
         const st = m.s || {}, p = Array.isArray(st.p) ? st.p.slice(0, 400).map((x: any) => Math.max(0, Math.min(1000, Math.round(+x || 0)))) : [];
-        const total = s.strokes.reduce((a: number, x: any) => a + x.p.length, 0);
-        if (p.length < 2 || total > 40000) return {};
-        s.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(st.c) ? st.c : "#ffffff", w: [3, 8, 18, 40].includes(+st.w) ? +st.w : 8, p }); return {};
+        s.total = s.total || 0;
+        if (p.length < 2 || s.total > 60000) return {};
+        s.total += p.length;
+        s.strokes.push({ c: /^#[0-9a-f]{6}$/i.test(st.c) ? st.c : "#111111", w: [3, 8, 18, 40, 70].includes(+st.w) ? +st.w : 8, p, sid: Math.floor(+st.sid || 0) }); return {};
       }
       if (m.action === "guess") {
         const text = String(m.text || "").trim().slice(0, 60);

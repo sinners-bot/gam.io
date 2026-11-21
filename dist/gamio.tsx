@@ -9,7 +9,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   sidebar = function () { return baseSidebar.apply(this, arguments).replace("GAME<span>NIGHT</span>", "GAM<span>.IO</span>"); };
 
   S.tables = []; S.table = ""; S.peek = false;
-  var lastTable = "";
+  var lastTable = "", arrived = false;
   function nmOf(g, i) { return g.seats[i] ? esc(g.seats[i].name) + (g.seats[i].id === S.you ? " (you)" : "") : "?"; }
   function humansElse(g) { return g.seats.some(function (s, i) { return i !== g.seat && !s.bot; }); }
 
@@ -18,6 +18,10 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     if (m.t === "state") {
       S.tables = m.tables || []; S.table = m.table || "";
       if (S.table !== lastTable) { S.peek = false; lastTable = S.table; }
+      if (!arrived) { // just joined the call's activity (e.g. from the voice channel): offer the open tables
+        arrived = true;
+        setTimeout(function () { (S.tables || []).forEach(function (t) { if (t.phase === "lobby" && t.room !== S.table && t.seats.length < t.max && !t.seats.some(function (x) { return x.id === S.you; })) addInvite({ room: t.room, game: t.type, name: t.name, host: t.host }); }); }, 400);
+      }
       return false;
     }
     if (m.t === "invite") { addInvite(m); return true; }
@@ -146,6 +150,33 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
       chime(660, 0.06); try { if (navigator.vibrate) navigator.vibrate(60); } catch (er) {}
     }
     wasMine = mine;
+  }
+
+  // ===== Discord rich presence (shows on your profile; friends can "Ask to Join") =====
+  var PR = { key: "", at: 0, timer: null, start: 0, gid: "" };
+  function presence() {
+    if (typeof sdk === "undefined" || !sdk || !sdk.commands || !sdk.commands.setActivity) return;
+    var g = S.game, a;
+    if (g) {
+      var humans = g.seats.filter(function (x) { return !x.bot; }).length, bots = g.seats.length - humans;
+      if (g.phase === "lobby") a = { details: "Setting up " + g.name, state: "Waiting for players", party: { size: [Math.max(1, g.seats.length), g.max] } };
+      else if (g.phase === "playing" && g.seat < 0) a = { details: "Watching " + g.name, state: "Spectating" };
+      else if (g.phase === "playing") a = { details: "Playing " + g.name, state: humans > 1 ? (bots ? "With friends and bots" : "With friends") : "Against the computer", party: { size: [g.seats.length, g.max] } };
+      else a = { details: "Just finished " + g.name, state: "Choosing the next game" };
+    } else {
+      var open = (S.tables || []).filter(function (t) { return t.phase === "lobby"; }).length;
+      a = { details: "Picking a game", state: open ? open + (open === 1 ? " open table" : " open tables") + " in the call" : "In the lobby" };
+    }
+    var gid = g ? g.id + ":" + g.phase : "hub";
+    if (gid !== PR.gid) { PR.gid = gid; PR.start = Math.floor(Date.now() / 1000); }
+    a.type = 0; a.timestamps = { start: PR.start };
+    var key = JSON.stringify(a);
+    if (key === PR.key) return;
+    PR.key = key; clearTimeout(PR.timer);
+    PR.timer = setTimeout(function () { // Discord rate-limits presence updates, so send at most one every 4 seconds
+      PR.at = Date.now();
+      try { sdk.commands.setActivity({ activity: JSON.parse(PR.key) }).catch(function (e) { console.warn("presence", e && e.message); }); } catch (e) {}
+    }, Math.max(0, PR.at + 4000 - Date.now()));
   }
 
   // ===== Juno (rebuilt Color Clash) =====
@@ -416,6 +447,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
       } else if (ret) ret.remove();
       turnFx(g);
       drawInvites();
+      presence();
     } catch (er) { console.error("gamio fx", er); }
     P.key = key; P.phase = g ? g.phase : ""; P.st = g && g.state ? JSON.parse(JSON.stringify(g.state)) : null;
   };

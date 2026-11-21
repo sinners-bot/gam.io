@@ -105,4 +105,8 @@ Each Discord call is a hub. Picking a game opens a separate table (`<call>#<n>`)
 
 ## Deploying (loader services)
 
-`game-night`, `game-night-legal` and `game-night-gamio` run a small loader that downloads their bundle from this repo (`dist/server.tsx`, `dist/legal.tsx`, `dist/gamio.tsx`) at the commit set in the service's `SRC_REF` variable. To ship a change: run `node build.mjs`, commit and push, then set `SRC_REF` on the affected services to the new commit SHA, which redeploys them. The repo must stay public for the loaders to fetch it, or the loaders need a GitHub token. The other UI packs still hold their code inline in Railway.
+`game-night`, `game-night-ui`, `game-night-party`, `game-night-legal` and `game-night-gamio` run a small loader that downloads their bundle from this repo (`dist/server.tsx`, `dist/ui.tsx`, `dist/party.tsx`, `dist/legal.tsx`, `dist/gamio.tsx`) at the commit set in the service's `SRC_REF` variable. To ship a change: run `node build.mjs`, commit and push, then set `SRC_REF` on the affected services to the new commit SHA, which redeploys them. The repo must stay public for the loaders to fetch it, or the loaders need a GitHub token. The other UI packs still hold their code inline in Railway.
+
+## Rich presence
+
+Sign-in asks for `identify` and `rpc.activities.write`. With that, the GAM.IO pack calls `setActivity` to show what each player is doing (picking a game, in a lobby, playing X with party size), at most once every 4 seconds. If a user declines the extra scope, sign-in falls back to `identify` only.
