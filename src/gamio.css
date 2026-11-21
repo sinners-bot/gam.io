@@ -1,0 +1,157 @@
+/* ================= GAM.IO pack (loads last) ================= */
+.brand-t span{margin-left:0}
+/* let the engine drive these instead of replaying on every update */
+.mk{animation:none}.rd.new{animation:none}.c4 .disc[data-new]{animation:none}.sea .bc.miss::after{animation:none}
+.dots rect.bx{transform-box:fill-box;transform-origin:center}
+.afkbar{display:none!important}
+
+/* ----- tables in this call ----- */
+.gx-tables{margin:4px 0 18px}
+.gx-tl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.gx-t{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#251c5e,#1a1446);border:1px solid var(--line);border-radius:18px;padding:10px 12px;position:relative;overflow:hidden;animation:gx-in .35s ease-out}
+.gx-t.gx-lobby{border-color:#ffc83d66;box-shadow:0 0 0 1px #ffc83d22,0 8px 24px #0006}
+.gx-t.gx-lobby::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,#ffffff10 50%,transparent 70%);background-size:250% 100%;animation:gx-shine 3s linear infinite;pointer-events:none}
+@keyframes gx-shine{from{background-position:150% 0}to{background-position:-100% 0}}
+@keyframes gx-in{from{opacity:0;transform:translateY(10px)}}
+.gx-t .art{width:64px;height:64px;flex:none;border-radius:14px}
+.gx-tb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.gx-tb b{font-size:16px}.gx-ph{font-size:12px;color:var(--mut);font-weight:700}
+.gx-t.gx-playing .gx-ph{color:#ff6b9a}
+.gx-who{display:flex;flex-wrap:wrap;gap:4px}
+.gx-chip{font-size:11px;font-weight:800;background:#ffffff12;border-radius:99px;padding:2px 8px}.gx-chip.bot{opacity:.7}
+.gx-tbtn{display:flex;flex-direction:column;gap:6px}.gx-tbtn .btn{padding:8px 14px}
+.gx-hint{background:#ffffff0a;border:1px dashed var(--line);border-radius:14px;padding:10px 14px;margin:0 0 14px;color:var(--mut);font-weight:700;font-size:14px}
+
+/* ----- invite toasts ----- */
+#gx-inv{position:fixed;top:70px;right:14px;z-index:95;display:flex;flex-direction:column;gap:8px;max-width:min(380px,92vw)}
+.gx-iv{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#2c2170f5,#1b1440f5);border:1px solid #ffc83d88;border-radius:16px;padding:8px 8px 8px 10px;box-shadow:0 12px 30px #000a,0 0 30px #7c4dff44;animation:gx-slide .45s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes gx-slide{from{transform:translateX(120%);opacity:0}}
+.gx-iv .art{width:40px;height:40px;flex:none;border-radius:10px}
+.gx-ivt{flex:1;font-size:13px;line-height:1.3}
+.gx-iv .btn{padding:8px 14px}
+.gx-ivx{width:28px;height:28px;border-radius:50%;background:#ffffff14;font-size:12px}
+#gx-ret{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;background:#1b1440f5;border:1px solid var(--gold);border-radius:99px;padding:6px 6px 6px 8px;box-shadow:0 10px 30px #000a;animation:gx-in .3s}
+#gx-ret .art{width:32px;height:32px;border-radius:50%}#gx-ret span{font-size:14px}#gx-ret .btn{padding:8px 16px}
+
+/* ----- turn timer ----- */
+.gx-timer{width:min(560px,100%);margin:2px auto 8px;display:flex;flex-direction:column;gap:4px;animation:gx-in .3s}
+.gx-tw{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--mut)}
+.gx-timer.mine .gx-tw{color:var(--gold)}
+.gx-timer i{display:block;height:8px;border-radius:99px;background:#ffffff14;overflow:hidden}
+.gx-timer u{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#4dd4ff,#7c4dff);transition:width .1s linear}
+.gx-timer.mine u{background:linear-gradient(90deg,#ffc83d,#ff9f43);box-shadow:0 0 12px #ffc83d}
+.gx-timer.urgent u{background:linear-gradient(90deg,#ff4d8d,#ff2d55);animation:gx-blink .5s ease-in-out infinite}
+.gx-timer.urgent .gx-tw{color:#ff6b9a}
+@keyframes gx-blink{50%{opacity:.55}}
+
+/* ----- your turn: the whole screen lights up ----- */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:85;opacity:0;transition:opacity .35s;
+  box-shadow:inset 0 0 0 4px #ffc83d,inset 0 0 60px 10px #ffc83d88,inset 0 0 180px 40px #ff9f4333}
+body.gx-myturn::after{opacity:1;animation:gx-breathe 1.8s ease-in-out infinite}
+@keyframes gx-breathe{50%{box-shadow:inset 0 0 0 3px #ffc83dcc,inset 0 0 40px 6px #ffc83d55,inset 0 0 120px 20px #ff9f4322}}
+body.gx-myturn .plc.turn{animation:gx-chip 1.2s ease-in-out infinite}
+@keyframes gx-chip{50%{box-shadow:0 0 26px #ffc83daa}}
+.gx-yt{position:fixed;inset:0;z-index:96;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.gx-yt b{font-size:clamp(34px,8vw,76px);font-weight:900;letter-spacing:3px;color:#fff;text-shadow:0 0 20px #ffc83d,0 0 50px #ff9f43,0 6px 0 #b35a00;animation:gx-yt 1.25s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes gx-yt{0%{transform:scale(.3);opacity:0}25%{transform:scale(1.1);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:0}}
+
+/* ----- effects ----- */
+.gx-burst{position:absolute;left:50%;top:50%;z-index:30;pointer-events:none;font-size:64px;font-weight:900;color:#fff;display:flex;flex-direction:column;align-items:center;line-height:1;
+  text-shadow:0 0 18px var(--bc,#b05cff),0 4px 0 #0008;animation:gx-burst 1.05s cubic-bezier(.2,.9,.3,1) forwards}
+.gx-burst small{font-size:16px;letter-spacing:3px;margin-top:4px}
+.gx-burst.jR{--bc:#ff3b4f}.gx-burst.jG{--bc:#2bd46a}.gx-burst.jB{--bc:#2f8cff}.gx-burst.jY{--bc:#ffc61a}
+.gx-burst.juno{font-size:34px;color:#ffe14a;--bc:#ff3b4f;top:0}
+@keyframes gx-burst{0%{transform:translate(-50%,-50%) scale(.2) rotate(-15deg);opacity:0}30%{transform:translate(-50%,-50%) scale(1.15) rotate(3deg);opacity:1}75%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-70%) scale(1.1);opacity:0}}
+.gx-ghost{position:fixed;z-index:75;pointer-events:none;width:60px}
+.gx-ghost .jc{--cw:60px}
+.gx-confetti{position:fixed;inset:0;pointer-events:none;z-index:99;overflow:hidden}
+.gx-confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:gx-fall linear forwards}
+@keyframes gx-fall{to{top:110%;transform:rotate(720deg) translateX(60px)}}
+.modal .box{animation:gx-pop2 .35s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes gx-pop2{from{transform:scale(.8);opacity:0}}
+.plc{transition:transform .25s,box-shadow .25s,border-color .25s}.plc.turn{transform:translateY(-2px)}
+.hand .card,.thand .card{transition:transform .18s cubic-bezier(.2,.9,.3,1.2)}
+.hand .card.ok:hover,.thand .card.ok:hover{transform:translateY(-12px)}
+.btn{transition:transform .12s,box-shadow .2s,filter .2s}.btn:active{transform:scale(.95)}
+
+/* ================= Juno ================= */
+:root{--jR:#ff3b4f;--jG:#21c45e;--jB:#2f7dff;--jY:#ffbf1a;--jK:#26213b}
+.g-juno{width:100%;align-items:stretch}
+.jtable{position:relative;width:min(900px,100%);height:clamp(300px,46vh,430px);margin:6px auto 0;border-radius:50% / 42%;
+  background:radial-gradient(ellipse at 50% 40%,#3c2a8f 0%,#24196a 55%,#160f45 100%);
+  box-shadow:inset 0 0 0 10px #120b38,inset 0 0 0 13px #ffc83d55,inset 0 20px 60px #0008,0 24px 60px #000a,0 0 70px #7c4dff33}
+.jtable::before{content:"";position:absolute;inset:13px;border-radius:inherit;background:repeating-radial-gradient(circle at 50% 50%,#ffffff05 0 2px,transparent 2px 6px);pointer-events:none}
+.jseat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;z-index:3;transition:transform .3s}
+.jseat .av{position:relative;z-index:2;transition:box-shadow .3s}
+.jseat.turn{transform:translate(-50%,-50%) scale(1.08)}
+.jseat.turn .av{box-shadow:0 0 0 3px var(--gold),0 0 22px #ffc83d!important;animation:gx-chip 1.2s infinite}
+.jsn{display:flex;align-items:center;gap:6px;background:#0f0b2bd9;border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 10px;font-size:12px;white-space:nowrap;max-width:150px}
+.jsn b{overflow:hidden;text-overflow:ellipsis}
+.jsn em{font-style:normal;font-weight:900;background:#fff;color:#1b1442;border-radius:99px;min-width:22px;text-align:center;padding:1px 6px;transition:transform .2s}
+.jseat.one .jsn em{background:#ff3b4f;color:#fff;animation:gx-blink .7s infinite}
+.jfan{position:relative;height:46px;width:90px;margin-bottom:-14px}
+.jfan i{position:absolute;left:50%;bottom:0;width:30px;height:44px;margin-left:-15px;border-radius:5px;transform-origin:50% 130%;transform:rotate(calc(var(--o) * 9deg));
+  background:radial-gradient(ellipse at 50% 50%,#ff3b4f 0 30%,transparent 31%),linear-gradient(135deg,#2a1f63,#140e38);border:2px solid #fff;box-shadow:0 2px 4px #0008;transition:transform .3s}
+.jcenter{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:26px;z-index:2}
+.jring{position:absolute;left:50%;top:50%;width:300px;height:170px;margin:-85px 0 0 -150px;border-radius:50%;border:3px dashed var(--jc);opacity:.55;filter:drop-shadow(0 0 8px var(--jc));transition:border-color .5s}
+.jring.cw{animation:gx-spin 14s linear infinite}.jring.ccw{animation:gx-spin 14s linear infinite reverse}
+@keyframes gx-spin{to{transform:rotate(360deg)}}
+.jring::before,.jring::after{content:"➤";position:absolute;color:var(--jc);font-size:18px}
+.jring::before{top:-12px;left:50%}.jring::after{bottom:-12px;left:50%;transform:rotate(180deg)}
+.jring.ccw::before{transform:rotate(180deg)}.jring.ccw::after{transform:none}
+.jdeck{position:relative;width:var(--cw);height:calc(var(--cw) * 1.45);--cw:74px;cursor:default}
+.jdeck .jc{position:absolute;left:0;top:0}
+.jdeck .d2{transform:translate(-3px,-3px)}.jdeck .d1{transform:translate(-6px,-6px)}
+.jdeck small{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;font-weight:800;color:var(--mut)}
+.jdeck.can{cursor:pointer}.jdeck.can .d1{animation:gx-nudge 1.4s ease-in-out infinite;box-shadow:0 0 0 3px var(--gold),0 0 24px #ffc83d}
+@keyframes gx-nudge{50%{transform:translate(-6px,-12px) rotate(-3deg)}}
+.jpile{position:relative;width:86px;height:calc(86px * 1.45);--cw:86px}
+.jpc{position:absolute;inset:0;transform:rotate(var(--r))}
+.jpc .jc{box-shadow:0 4px 10px #0009}
+.jcol{position:absolute;top:calc(100% + 6px);left:calc(50% + 56px);transform:translateX(-50%);font-size:11px;font-weight:900;letter-spacing:1px;padding:2px 10px;border-radius:99px;color:#fff;text-transform:uppercase;transition:background .4s}
+.jcol.jR{background:var(--jR)}.jcol.jG{background:var(--jG)}.jcol.jB{background:var(--jB)}.jcol.jY{background:var(--jY);color:#2b1d00}
+.jlog{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font-size:12px;color:#ddd6ff;background:#0f0b2bb3;border-radius:99px;padding:3px 12px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;z-index:4}
+.jl{display:inline-block;font-weight:900;color:#fff;border-radius:5px;padding:0 5px}
+.jl.jR{background:var(--jR)}.jl.jG{background:var(--jG)}.jl.jB{background:var(--jB)}.jl.jY{background:var(--jY);color:#2b1d00}.jl.jK{background:conic-gradient(var(--jR) 0 25%,var(--jB) 0 50%,var(--jG) 0 75%,var(--jY) 0)}
+.jhint{margin:10px 0 0}
+
+/* card face */
+.g-juno,.jtable{--cw:84px}
+.jc{position:relative;width:var(--cw);height:calc(var(--cw) * 1.45);border-radius:calc(var(--cw) * .12);background:var(--cc);
+  box-shadow:inset 0 0 0 calc(var(--cw) * .05) #fff,inset 0 0 0 calc(var(--cw) * .065) #0002,0 3px 8px #0007;color:#fff;font-weight:900;overflow:hidden;flex:none;user-select:none}
+.jc::before{content:"";position:absolute;inset:0;background:linear-gradient(150deg,#ffffff38 0%,transparent 40%,#00000020 100%);pointer-events:none}
+.jR{--cc:var(--jR)}.jG{--cc:var(--jG)}.jB{--cc:var(--jB)}.jY{--cc:var(--jY)}.jK{--cc:var(--jK)}
+.jmid{position:absolute;left:50%;top:50%;width:62%;height:44%;transform:translate(-50%,-50%) rotate(45deg);border-radius:22%;background:#fff;box-shadow:0 2px 6px #0004;display:flex;align-items:center;justify-content:center}
+.jmid b{transform:rotate(-45deg);font-size:calc(var(--cw) * .42);color:var(--cc);text-shadow:2px 2px 0 #0003;letter-spacing:-1px}
+.jmid.jw{background:conic-gradient(from 45deg,var(--jR) 0 25%,var(--jB) 0 50%,var(--jG) 0 75%,var(--jY) 0)}
+.jmid.jw b{color:#fff;text-shadow:0 2px 0 #000a,0 0 8px #000}
+.jtl,.jbr{position:absolute;font-size:calc(var(--cw) * .2);line-height:1;text-shadow:1px 1px 0 #0005}
+.jtl{left:calc(var(--cw) * .1);top:calc(var(--cw) * .09)}.jbr{right:calc(var(--cw) * .1);bottom:calc(var(--cw) * .09);transform:rotate(180deg)}
+.jback{--cc:#1a1240;background:radial-gradient(ellipse at 50% 50%,#ff3b4f 0 34%,transparent 35%),linear-gradient(135deg,#2c2070,#150e3c)}
+.jlogo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-28deg);font-size:calc(var(--cw) * .25);font-style:italic;letter-spacing:1px;color:#ffe14a;text-shadow:2px 2px 0 #7a0016,0 0 6px #0008}
+
+/* my hand: fanned like you're holding it */
+.jhand{position:relative;height:190px;width:100%;margin-top:6px;display:flex;justify-content:center}
+.jslot{position:absolute;bottom:14px;left:50%;width:0;transform:translateX(calc(var(--o) * var(--gap))) rotate(calc(var(--o) * var(--rot)));transform-origin:0 400px;transition:transform .35s cubic-bezier(.2,.85,.25,1)}
+.jslot .jc{position:absolute;bottom:0;left:calc(var(--cw) / -2);--cw:96px;transition:transform .18s cubic-bezier(.2,.9,.3,1.3),filter .2s,box-shadow .2s;cursor:pointer}
+.jhand.mine .jc.ok{transform:translateY(-16px);box-shadow:inset 0 0 0 calc(var(--cw) * .05) #fff,0 0 0 3px var(--gold),0 0 22px #ffc83daa,0 8px 14px #0008}
+.jhand.mine .jc.ok:hover{transform:translateY(-34px) scale(1.06)}
+.jhand .jc:hover{transform:translateY(-10px)}
+.jhand.mine .jc.dim{filter:brightness(.55) saturate(.6)}
+.jpick h2{margin-bottom:14px}
+.jwheel{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:240px;margin:0 auto 14px}
+.jwheel button{height:90px;border-radius:18px;font-weight:900;font-size:18px;color:#fff;background:var(--cc);box-shadow:inset 0 -6px 0 #0003,0 6px 16px #0007;transition:transform .15s}
+.jwheel button:hover{transform:scale(1.06)}
+.jwheel button:nth-child(1){border-top-left-radius:120px}.jwheel button:nth-child(2){border-top-right-radius:120px}.jwheel button:nth-child(3){border-bottom-left-radius:120px}.jwheel button:nth-child(4){border-bottom-right-radius:120px}
+.jwheel .jY{color:#2b1d00}
+
+@media (max-width:640px){
+  .jtable{height:300px;border-radius:44% / 36%}
+  .jfan{transform:scale(.75);margin-bottom:-20px}
+  .jcenter{gap:16px}.jdeck{--cw:56px}.jpile{--cw:64px;width:64px;height:calc(64px * 1.45)}
+  .jring{width:220px;height:130px;margin:-65px 0 0 -110px}
+  .jslot .jc{--cw:70px}.jhand{height:150px}
+  .jcol{left:calc(50% + 40px)}
+  .gx-burst{font-size:46px}
+  #gx-inv{top:auto;bottom:80px;right:8px;left:8px;max-width:none}
+}

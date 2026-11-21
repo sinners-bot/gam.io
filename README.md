@@ -1,4 +1,4 @@
-# 🎲 Game Night
+# 🎲 GAM.IO
 
 A Plato-style **Discord Activity**: a hub of 22 multiplayer games you play together inside Discord voice calls, with bots at three difficulty levels, XP and levels, a leaderboard, and a neon-purple lobby. Everything runs on **Railway Functions** (single-file Bun services) plus Postgres.
 
@@ -18,7 +18,7 @@ Discord client ──► game-night (server.tsx)
                      ├─ serves the page, /client.js (all UI packs concatenated) and the Discord SDK bundle
                      ├─ OAuth token exchange (/api/token), WebSocket rooms (/ws), one room per Activity instance
                      ├─ game logic + bots, idle-turn timer, stats in Postgres
-                     ├─ fetches UI from ASSETS_URLS  ──► game-night-ui, -party, -cards, -extras, -bluff, -skin  (/client.js, /style.css)
+                     ├─ fetches UI from ASSETS_URLS  ──► game-night-ui, -party, -cards, -extras, -bluff, -skin, -gamio  (/client.js, /style.css)
                      └─ loads plugins from PLUGIN_URLS ─► game-night-party, -cards, -extras, -bluff  (/games.ts)
 game-night-legal (legal.tsx) ─ /terms and /privacy for Discord verification
 ```
@@ -67,6 +67,7 @@ There is one Railway Function per bundle. Paste the contents of the `dist/` file
 | `extras.tsx` | game-night-extras | game-night-extras-production.up.railway.app |
 | `bluff.tsx` | game-night-bluff | game-night-bluff-production.up.railway.app |
 | `skin.tsx` | game-night-skin | game-night-skin-production.up.railway.app |
+| `gamio.tsx` | game-night-gamio | game-night-gamio-production.up.railway.app |
 | `legal.tsx` | game-night-legal | game-night-legal-production.up.railway.app |
 
 **Deploy order:** UI and plugin services first, then the server. The server fetches plugins only at startup, and UI assets every 30 s. After a plugin's game logic (`*.ts`) changes, redeploy or restart the server.
@@ -78,7 +79,7 @@ There is one Railway Function per bundle. Paste the contents of the `dist/` file
 | game-night | `DISCORD_CLIENT_ID` | `1573456130699428090` |
 | game-night | `DISCORD_CLIENT_SECRET` | from the Discord Developer Portal. **Never commit it.** |
 | game-night | `DATABASE_URL` | reference to the Postgres service |
-| game-night | `ASSETS_URLS` | comma-separated UI service URLs, in load order: ui, party, cards, extras, bluff, skin (skin must be last) |
+| game-night | `ASSETS_URLS` | comma-separated UI service URLs, in load order: ui, party, cards, extras, bluff, skin, gamio (skin then gamio last) |
 | game-night | `PLUGIN_URLS` | comma-separated plugin URLs: party, cards, extras, bluff |
 | game-night | `AFK_SECONDS` | optional, default 60 |
 | game-night-legal | `OPERATOR_NAME`, `CONTACT_EMAIL`, `GOVERNING_COUNTRY` | shown on the Terms and Privacy pages |
@@ -97,3 +98,7 @@ Outside Discord, opening the server URL in a browser gives a guest mode that's h
 ## Online play
 
 Players can quick-match or browse open lobbies across Discord servers (🌍 button). Lobby hosts choose who can join: this call, their server, or everyone. Matched games run in `mm:N` rooms and fill with Medium bots up to the minimum player count. `AFK_SECONDS` (default 60) on game-night sets the idle-turn timer.
+
+## Tables
+
+Each Discord call is a hub. Picking a game opens a separate table (`<call>#<n>`), so several games, even of the same type, can run at once. Others in the call get an invite and can join or watch from the Tables list. If someone leaves mid-game while other people are still playing, a Medium bot takes their seat. Per-game turn times are in `TURN_SECS` in `src/server.ts`.

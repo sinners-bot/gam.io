@@ -1,4 +1,4 @@
-// Game Night — a Plato-style Discord Activity hub. Runs as a single Railway Function (Bun).
+// GAM.IO — a Plato-style Discord Activity hub. Runs as a single Railway Function (Bun).
 import { DiscordSDK } from "@discord/embedded-app-sdk";
 void DiscordSDK; // imported so the runtime installs the SDK; it is bundled for the browser below
 
@@ -786,6 +786,7 @@ for (const b of (Bun.env.PLUGIN_URLS || "").split(",").map((u) => u.trim().repla
     console.log("plugin loaded", b, Object.keys(added).join(","));
   } catch (e) { console.error("plugin failed", b, e); }
 }
+if (GAMES.clash) (GAMES.clash as any).name = "Juno";
 
 // ---------- browser bundle of the Discord SDK ----------
 let SDK_JS = "";
@@ -868,6 +869,11 @@ async function userFromToken(token: string): Promise<User | null> {
 // ---------- rooms ----------
 type Game = { id: number; type: string; phase: "lobby" | "playing" | "over"; hostId: string; seats: string[]; state: any; winner: string | null; winners?: string[]; names: Record<string, User>; seq?: number; afkKey?: string; afkSeat?: number; turnDeadline?: number };
 type Room = { id: string; members: Map<string, { user: User; sockets: Set<any> }>; game: Game | null; guild?: string; vis?: "call" | "server" | "public" };
+// A Discord call is a "hub" room; every game lobby in it is its own table room "<hub>#<n>", so several games can run at once.
+const hubOf = (id: string) => id.startsWith("mm:") ? id : id.split("#")[0];
+const isTable = (id: string) => id.includes("#");
+const callRooms = (hub: string) => [...rooms.values()].filter((r) => hubOf(r.id) === hub);
+let tableSeq = 0;
 const rooms = new Map<string, Room>();
 let gameSeq = 0;
 const isBot = (id: string) => id.startsWith("bot:");
@@ -933,6 +939,16 @@ function endGame(room: Room, res: Res) {
 }
 // Idle-turn timer: if a human doesn't act within AFK_SECONDS, a medium bot plays that one move for them.
 const AFK_MS = Number(Bun.env.AFK_SECONDS || 60) * 1000;
+// Seconds per turn; when it runs out a medium bot makes that one move. Games not listed use AFK_SECONDS.
+const TURN_SECS: Record<string, number> = { ttt: 15, connect4: 20, uttt: 25, dots: 20, reversi: 30, checkers: 40, chess: 60, mancala: 25, dice: 40, battleship: 25, crazy8: 25, clash: 20, hearts: 30, spades: 30, poker: 30, liars: 30, cheat: 30, ludo: 20, pool: 45 };
+function turnMs(g: Game) { if (g.type === "battleship" && g.state?.phase === "setup") return 60_000; return (TURN_SECS[g.type] || AFK_MS / 1000) * 1000; }
+function yourTurn(g: Game, seat: number) {
+  if (seat < 0 || g.phase !== "playing" || !g.state) return false;
+  const mod: any = GAMES[g.type], st = g.state;
+  if (g.type === "battleship" && st.phase === "setup") return !st.ready[seat];
+  if (mod.turn(st) === seat) return true;
+  return mod.pending ? mod.pending(st).includes(seat) : false;
+}
 const afkTimers = new Map<string, any>();
 function humanActor(g: Game): number | null {
   const mod: any = GAMES[g.type], st = g.state;
@@ -951,7 +967,7 @@ function scheduleAfk(room: Room) {
   const key = g.id + ":" + t + ":" + (g.seq || 0);
   if (g.afkKey === key && afkTimers.has(room.id)) return;
   clearTimeout(afkTimers.get(room.id));
-  g.afkKey = key; g.afkSeat = t; g.turnDeadline = Date.now() + AFK_MS;
+  g.afkKey = key; g.afkSeat = t; g.turnDeadline = Date.now() + turnMs(g);
   afkTimers.set(room.id, setTimeout(() => {
     afkTimers.delete(room.id);
     const g2 = room.game;
@@ -964,10 +980,10 @@ function scheduleAfk(room: Room) {
     } catch (e) { console.error("afk move error", e); }
     g2.seq = (g2.seq || 0) + 1;
     if (res.err) { console.error("afk move failed", g2.type, res.err); if (g2.seats.length === 2) { finish(room, g2.seats[1 - t]); return; } }
-    for (const m of room.members.values()) sendTo(room, m.user.id, { t: "err", msg: g2.names[g2.seats[t]].name + " ran out of time — a move was made for them" });
+    for (const m of room.members.values()) sendTo(room, m.user.id, { t: "err", msg: g2.names[g2.seats[t]].name + " ran out of time, so a move was made for them" });
     if (res.done) { endGame(room, res); return; }
     broadcast(room); scheduleBots(room); scheduleTick(room); scheduleAfk(room);
-  }, AFK_MS));
+  }, turnMs(g)));
 }
 // ---------- Discord-wide play: quick match, public lobbies, emotes ----------
 const userGuild = new Map<string, string>();      // user id -> Discord server (guild) id, sent by the client
@@ -1006,7 +1022,7 @@ function tryMatch(type: string) {
   for (const x of take) {
     const cur = roomOf(x.user.id);
     if (!cur) continue;
-    if (!cur.id.startsWith("mm:") && !homeRoom.has(x.user.id)) homeRoom.set(x.user.id, cur.id);
+    if (!cur.id.startsWith("mm:") && !homeRoom.has(x.user.id)) homeRoom.set(x.user.id, hubOf(cur.id));
     moveUser(x.user, cur.id, id);
   }
   const room = getRoom(id), players = take.map((x) => x.user).filter((u) => room.members.has(u.id));
@@ -1029,7 +1045,7 @@ function lobbiesFor(user: User, here: string) {
   const guild = userGuild.get(user.id), out: any[] = [];
   for (const r of rooms.values()) {
     const g = r.game;
-    if (r.id === here || !g || g.phase !== "lobby" || !r.vis || r.vis === "call") continue;
+    if (hubOf(r.id) === hubOf(here) || !g || g.phase !== "lobby" || !r.vis || r.vis === "call") continue;
     if (r.vis === "server" && (!guild || r.guild !== guild)) continue;
     if (g.seats.length >= GAMES[g.type].max) continue;
     out.push({ room: r.id, game: g.type, name: GAMES[g.type].name, host: g.names[g.hostId]?.name || "?", seats: g.seats.length, max: GAMES[g.type].max, vis: r.vis, sameServer: !!guild && r.guild === guild });
@@ -1064,7 +1080,7 @@ function online(room: Room, user: User, m: any): boolean {
       const mine = room.game;
       if (mine && mine.phase === "playing" && mine.seats.includes(user.id)) { sendTo(room, user.id, { t: "err", msg: "Finish your current game first" }); return true; }
       leaveQueues(user.id);
-      if (!homeRoom.has(user.id)) homeRoom.set(user.id, room.id);
+      if (!homeRoom.has(user.id)) homeRoom.set(user.id, hubOf(room.id));
       moveUser(user, room.id, target.id);
       handle(target, user, { t: "sit" });
       broadcast(target); return true;
@@ -1077,6 +1093,23 @@ function online(room: Room, user: User, m: any): boolean {
       const q = queues.get(m.game) || []; q.push({ user, at: Date.now() }); queues.set(m.game, q);
       notifyQueue(m.game); tryMatch(m.game); return true;
     }
+    case "jointable": {
+      const target = rooms.get(String(m.room)), hub = hubOf(room.id);
+      if (!target || !isTable(target.id) || hubOf(target.id) !== hub || !target.game) { sendTo(room, user.id, { t: "err", msg: "That table is gone" }); return true; }
+      if (target === room) { if (m.sit && room.game?.phase === "lobby") { const e = handle(room, user, { t: "sit" }); if (e) sendTo(room, user.id, { t: "err", msg: e }); broadcast(room); } return true; }
+      const mine = room.game;
+      if (mine && mine.phase === "playing" && mine.seats.includes(user.id) && isTable(room.id)) { sendTo(room, user.id, { t: "err", msg: "Finish your current game first" }); return true; }
+      leaveQueues(user.id);
+      if (isTable(room.id)) leaveTable(room, user, false);
+      if (!homeRoom.has(user.id)) homeRoom.set(user.id, hub);
+      moveUser(user, room.id, target.id);
+      if (m.sit && target.game && target.game.phase === "lobby") { const e = handle(target, user, { t: "sit" }); if (e) sendTo(target, user.id, { t: "err", msg: e }); }
+      broadcast(target); return true;
+    }
+    case "leavetable": {
+      if (!isTable(room.id)) { const g = room.game; if (room.id.startsWith("mm:")) return online(room, user, { t: "home" }); if (g && g.phase !== "playing") { handle(room, user, { t: g.phase === "lobby" ? "stand" : "back" }); broadcast(room); } return true; }
+      leaveTable(room, user, true); return true;
+    }
     case "qmcancel": leaveQueues(user.id); sendTo(room, user.id, { t: "queue", game: "", n: 0, need: 0 }); return true;
     case "home": {
       const g = room.game;
@@ -1086,9 +1119,44 @@ function online(room: Room, user: User, m: any): boolean {
   }
   return false;
 }
+// Leaving a table: in a lobby you give up your seat; mid-game a bot takes over your seat if other people are still playing.
+function leaveTable(room: Room, user: User, goHome: boolean) {
+  const g = room.game, i = g ? g.seats.indexOf(user.id) : -1;
+  if (g && g.phase === "playing" && i >= 0) {
+    const others = g.seats.some((id, k) => k !== i && !isBot(id) && room.members.has(id));
+    if (others) {
+      const bid = "bot:medium:" + ++botSeq;
+      g.seats[i] = bid; g.names[bid] = { id: bid, name: user.name + " (bot)", avatar: null, guest: true, bot: true, level: "medium" };
+      for (const mm of room.members.values()) if (mm.user.id !== user.id) sendTo(room, mm.user.id, { t: "err", msg: user.name + " left, so a bot took over their seat" });
+      g.seq = (g.seq || 0) + 1;
+    } else room.game = null;
+  }
+  if (goHome) {
+    const hub = hubOf(room.id);
+    homeRoom.delete(user.id);
+    moveUser(user, room.id, hub);
+    if (room.game && room.members.size === 0 && room.game.phase !== "playing") rooms.delete(room.id);
+    if (!room.members.size && (!room.game || !room.game.seats.some((id) => !isBot(id)))) rooms.delete(room.id);
+    const h = rooms.get(hub); if (h) broadcast(h);
+  }
+  if (rooms.has(room.id)) { scheduleBots(room); scheduleAfk(room); scheduleTick(room); broadcast(room); cleanupTable(room); }
+}
+// a table whose game was closed sends anyone still there back to the call
+function cleanupTable(room: Room) {
+  if (!isTable(room.id) || room.game || !rooms.has(room.id)) return;
+  const hub = hubOf(room.id);
+  for (const m of [...room.members.values()]) { homeRoom.delete(m.user.id); moveUser(m.user, room.id, hub); }
+  rooms.delete(room.id);
+  const h = rooms.get(hub); if (h) broadcast(h);
+}
+function inviteCall(table: Room, host: User) {
+  const g = table.game; if (!g) return;
+  for (const r of callRooms(hubOf(table.id))) if (r !== table) for (const m of r.members.values()) if (m.user.id !== host.id) sendTo(r, m.user.id, { t: "invite", room: table.id, game: g.type, name: GAMES[g.type].name, host: host.name, id: g.id });
+}
 function getRoom(id: string): Room { let r = rooms.get(id); if (!r) { r = { id, members: new Map(), game: null }; rooms.set(id, r); } return r; }
 
 function status(room: Room, uid: string) {
+  room = roomOf(uid) || room;
   const g = room.game;
   if (g && g.seats.includes(uid)) return g.phase === "lobby" ? "In lobby · " + GAMES[g.type].name : "Playing " + GAMES[g.type].name;
   return "Hanging out";
@@ -1101,12 +1169,19 @@ function view(room: Room, uid: string) {
     game = { id: g.id, type: g.type, name: mod.name, phase: g.phase, hostId: g.hostId, seat, winner: g.winner, winners: g.winners || (g.winner ? [g.winner] : []), min: mod.min, max: mod.max,
       seats: g.seats.map((id) => ({ ...g.names[id], online: isBot(id) || room.members.has(id) })),
       state: g.state ? mod.view(g.state, seat) : null, turn: g.state && g.phase === "playing" ? mod.turn(g.state) : null,
-      turnDeadline: g.phase === "playing" ? g.turnDeadline || 0 : 0, afkSeat: g.phase === "playing" ? (g.afkSeat ?? -1) : -1, now: Date.now() };
+      turnDeadline: g.phase === "playing" ? g.turnDeadline || 0 : 0, turnTotal: g.phase === "playing" && g.turnDeadline ? turnMs(g) : 0, afkSeat: g.phase === "playing" ? (g.afkSeat ?? -1) : -1, now: Date.now(), yourTurn: yourTurn(g, seat) };
   }
-  return { t: "state", you: uid, members: [...room.members.values()].map((m) => ({ ...m.user, status: status(room, m.user.id) })), game, away: homeRoom.has(uid), vis: room.vis || "call", match: room.id.startsWith("mm:") };
+  const hub = hubOf(room.id), call = room.id.startsWith("mm:") ? [room] : callRooms(hub), seen = new Set<string>(), members: any[] = [];
+  for (const r of call) for (const m of r.members.values()) if (!seen.has(m.user.id)) { seen.add(m.user.id); members.push({ ...m.user, status: status(r, m.user.id) }); }
+  const tables = room.id.startsWith("mm:") ? [] : call.filter((r) => isTable(r.id) && r.game).map((r) => { const t = r.game!; return { room: r.id, id: t.id, type: t.type, name: GAMES[t.type].name, phase: t.phase, host: t.names[t.hostId]?.name || "?", seats: t.seats.map((id) => ({ name: t.names[id]?.name || "?", bot: isBot(id), id })), max: GAMES[t.type].max, watchers: [...r.members.keys()].filter((id) => !t.seats.includes(id)).length }; });
+  const home = homeRoom.get(uid);
+  return { t: "state", you: uid, members, game, tables, table: isTable(room.id) ? room.id : "", away: !!home && hubOf(room.id) !== home, vis: room.vis || "call", match: room.id.startsWith("mm:") };
 }
 const sendTo = (room: Room, uid: string, msg: any) => { const m = room.members.get(uid); if (m) for (const ws of m.sockets) ws.send(JSON.stringify(msg)); };
-function broadcast(room: Room) { for (const m of room.members.values()) for (const ws of m.sockets) ws.send(JSON.stringify(view(room, m.user.id))); }
+function broadcast(room: Room) {
+  const list = room.id.startsWith("mm:") ? [room] : callRooms(hubOf(room.id));
+  for (const r of list) for (const m of r.members.values()) for (const ws of m.sockets) ws.send(JSON.stringify(view(r, m.user.id)));
+}
 
 async function finish(room: Room, winner: string | null) {
   const g = room.game!; g.phase = "over"; g.winner = winner;
@@ -1122,8 +1197,16 @@ function handle(room: Room, user: User, m: any): string | void {
   const g = room.game;
   switch (m.t) {
     case "pick":
-      if (g && g.phase !== "over") return g.phase === "lobby" ? "A lobby is already open" : "A game is already running";
       if (!GAMES[m.game]) return "Unknown game";
+      if (!isTable(room.id) && !room.id.startsWith("mm:")) {
+        const id = room.id + "#" + ++tableSeq, t = getRoom(id);
+        t.guild = room.guild; t.vis = "call";
+        if (!homeRoom.has(user.id)) homeRoom.set(user.id, room.id);
+        moveUser(user, room.id, id);
+        t.game = { id: ++gameSeq, type: m.game, phase: "lobby", hostId: user.id, seats: [user.id], state: null, winner: null, names: { [user.id]: user } };
+        inviteCall(t, user); broadcast(t); return "__done";
+      }
+      if (g && g.phase !== "over") return g.phase === "lobby" ? "A lobby is already open" : "A game is already running";
       room.game = { id: ++gameSeq, type: m.game, phase: "lobby", hostId: user.id, seats: [user.id], state: null, winner: null, names: { [user.id]: user } };
       return;
     case "sit":
@@ -1166,6 +1249,7 @@ function handle(room: Room, user: User, m: any): string | void {
     }
     case "back":
       if (!g) return;
+      if (isTable(room.id)) { leaveTable(room, user, true); return "__done"; }
       if (g.phase === "playing" && !g.seats.includes(user.id)) return "Only players can end the game";
       if (g.phase === "lobby" && g.hostId !== user.id) return "Only the host can close the lobby";
       room.game = null; return;
@@ -1192,7 +1276,7 @@ function handle(room: Room, user: User, m: any): string | void {
 
 // ---------- http + websocket ----------
 const NOCACHE = { "Cache-Control": "no-cache, no-store, must-revalidate" };
-const html = (a: typeof A) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Game Night</title><style>${a.css}</style></head><body><div id="app"><div class="splash"><div class="logo">🎲</div><p id="status">Loading…</p></div></div><script type="module" src="/client.js?v=${a.ver}"></script></body></html>`;
+const html = (a: typeof A) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GAM.IO</title><style>${a.css}</style></head><body><div id="app"><div class="splash"><div class="logo">🎲</div><p id="status">Loading…</p></div></div><script type="module" src="/client.js?v=${a.ver}"></script></body></html>`;
 const json = (d: any, status = 200) => new Response(JSON.stringify(d), { status, headers: { "Content-Type": "application/json" } });
 
 const server = Bun.serve({
@@ -1258,7 +1342,7 @@ const server = Bun.serve({
       if (err === "__done") return;
       if (err) ws.send(JSON.stringify({ t: "err", msg: err }));
       scheduleBots(room); scheduleTick(room); scheduleAfk(room);
-      broadcast(room);
+      broadcast(room); cleanupTable(room);
     },
     close(ws: any) {
       const { user, room: rid } = ws.data; const room = rooms.get(rid); if (!room) return;
@@ -1268,7 +1352,7 @@ const server = Bun.serve({
       room.members.delete(user.id);
       leaveQueues(user.id);
       const g = room.game;
-      if (g && g.phase === "lobby") handle(room, user, { t: "stand" });
+      if (g && g.phase === "lobby") { handle(room, user, { t: "stand" }); cleanupTable(room); if (!rooms.has(rid)) return; }
       if (!room.members.size) {
         // keep a running game around for a few minutes so a dropped player can reconnect
         if (!g || g.phase !== "playing") { rooms.delete(rid); return; }
@@ -1279,4 +1363,4 @@ const server = Bun.serve({
     },
   },
 });
-console.log("Game Night listening on", server.port);
+console.log("GAM.IO listening on", server.port);

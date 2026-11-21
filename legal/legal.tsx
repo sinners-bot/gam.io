@@ -1,6 +1,6 @@
-// Game Night — Terms of Service and Privacy Policy pages
-const APP = "Game Night";
-const OPERATOR = Bun.env.OPERATOR_NAME || "the Game Night team";
+// GAM.IO — Terms of Service and Privacy Policy pages
+const APP = "GAM.IO";
+const OPERATOR = Bun.env.OPERATOR_NAME || "the GAM.IO team";
 const EMAIL = Bun.env.CONTACT_EMAIL || "";
 const COUNTRY = Bun.env.GOVERNING_COUNTRY || "";
 const UPDATED = "20 November 2026";

@@ -13,5 +13,6 @@ out("party.tsx", pack("ui2.ts", "party.js", "party.css", "party.ts"));
 out("cards.tsx", pack("ui3.ts", "cards.js", "cards.css", "cards.ts"));
 out("extras.tsx", pack("ui4.ts", "extra.js", "extra.css", "extra.ts"));
 out("bluff.tsx", pack("ui5.ts", "bluff.js", "bluff.css", "bluff.ts"));
+out("gamio.tsx", src("ui7.ts").replace("__CLIENT_JS__", () => raw("gamio.js")).replace("__CSS__", () => raw("gamio.css")));
 out("skin.tsx", src("ui6.ts").replace("__CLIENT_JS__", () => raw("skin.js")).replace("__CSS__", () => raw("skin.css")));
 fs.copyFileSync("legal/legal.tsx", "dist/legal.tsx"); console.log("legal.tsx    copied");
