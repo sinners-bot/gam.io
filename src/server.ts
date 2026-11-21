@@ -122,7 +122,7 @@ async function userFromToken(token: string): Promise<User | null> {
 
 // ---------- rooms ----------
 type Game = { id: number; type: string; phase: "lobby" | "playing" | "over"; hostId: string; seats: string[]; state: any; winner: string | null; winners?: string[]; names: Record<string, User>; seq?: number; afkKey?: string; afkSeat?: number; turnDeadline?: number };
-type Room = { id: string; members: Map<string, { user: User; sockets: Set<any> }>; game: Game | null };
+type Room = { id: string; members: Map<string, { user: User; sockets: Set<any> }>; game: Game | null; guild?: string; vis?: "call" | "server" | "public" };
 const rooms = new Map<string, Room>();
 let gameSeq = 0;
 const isBot = (id: string) => id.startsWith("bot:");
@@ -224,6 +224,123 @@ function scheduleAfk(room: Room) {
     broadcast(room); scheduleBots(room); scheduleTick(room); scheduleAfk(room);
   }, AFK_MS));
 }
+// ---------- Discord-wide play: quick match, public lobbies, emotes ----------
+const userGuild = new Map<string, string>();      // user id -> Discord server (guild) id, sent by the client
+const homeRoom = new Map<string, string>();       // user id -> their own call's room while they play elsewhere
+const queues = new Map<string, { user: User; at: number }[]>(); // game type -> waiting players
+const lastEmote = new Map<string, number>();
+const EMOTES = ["👍", "😂", "😮", "😡", "❤️", "🔥", "GG!", "Nice move!", "Oops 😅", "Hurry up! ⏱", "Good luck!", "Well played!"];
+let matchSeq = 0;
+function moveUser(user: User, fromId: string, toId: string) {
+  if (fromId === toId) return;
+  const from = rooms.get(fromId), to = getRoom(toId);
+  const m = from?.members.get(user.id);
+  const sockets: Set<any> = m ? m.sockets : new Set();
+  if (from) {
+    const g = from.game;
+    if (g && g.phase === "lobby" && g.seats.includes(user.id)) handle(from, user, { t: "stand" });
+    from.members.delete(user.id);
+    if (!from.members.size && !(from.game && from.game.phase === "playing")) rooms.delete(fromId); else broadcast(from);
+  }
+  for (const ws of sockets) ws.data.room = toId;
+  const ex = to.members.get(user.id);
+  if (ex) for (const ws of sockets) ex.sockets.add(ws); else to.members.set(user.id, { user, sockets });
+}
+function leaveQueues(uid: string) { for (const [k, q] of queues) { const i = q.findIndex((x) => x.user.id === uid); if (i >= 0) { q.splice(i, 1); notifyQueue(k); } } }
+function notifyQueue(type: string) {
+  const q = queues.get(type) || [], need = matchNeed(type);
+  for (const x of q) for (const r of rooms.values()) if (r.members.has(x.user.id)) sendTo(r, x.user.id, { t: "queue", game: type, n: q.length, need });
+}
+const matchNeed = (type: string) => { const mod: any = GAMES[type]; return mod.noBots ? mod.min : 2; };
+function roomOf(uid: string) { for (const r of rooms.values()) if (r.members.has(uid)) return r; return null; }
+function tryMatch(type: string) {
+  const q = queues.get(type) || [], mod: any = GAMES[type], need = matchNeed(type);
+  if (q.length < need) return;
+  const take = q.splice(0, Math.min(q.length, mod.max));
+  const id = "mm:" + ++matchSeq;
+  for (const x of take) {
+    const cur = roomOf(x.user.id);
+    if (!cur) continue;
+    if (!cur.id.startsWith("mm:") && !homeRoom.has(x.user.id)) homeRoom.set(x.user.id, cur.id);
+    moveUser(x.user, cur.id, id);
+  }
+  const room = getRoom(id), players = take.map((x) => x.user).filter((u) => room.members.has(u.id));
+  if (players.length < need) { for (const u of players) returnHome(u); return; }
+  const g: Game = { id: ++gameSeq, type, phase: "lobby", hostId: players[0].id, seats: players.map((u) => u.id), state: null, winner: null, names: Object.fromEntries(players.map((u) => [u.id, u])) };
+  room.game = g; room.vis = "call";
+  while (g.seats.length < mod.min && !mod.noBots) { const bid = "bot:medium:" + ++botSeq; g.seats.push(bid); g.names[bid] = { id: bid, name: "Medium Bot" + (g.seats.length > 2 ? " " + (g.seats.length - 1) : ""), avatar: null, guest: true, bot: true, level: "medium" }; }
+  g.state = mod.init(g.seats.length); g.phase = "playing"; g.winners = [];
+  for (const u of players) sendTo(room, u.id, { t: "queue", game: type, n: 0, need, matched: true });
+  broadcast(room); scheduleBots(room); scheduleTick(room); scheduleAfk(room);
+}
+function returnHome(user: User) {
+  const cur = roomOf(user.id), home = homeRoom.get(user.id);
+  if (!cur || !home) return;
+  homeRoom.delete(user.id);
+  moveUser(user, cur.id, home);
+  const r = rooms.get(home); if (r) broadcast(r);
+}
+function lobbiesFor(user: User, here: string) {
+  const guild = userGuild.get(user.id), out: any[] = [];
+  for (const r of rooms.values()) {
+    const g = r.game;
+    if (r.id === here || !g || g.phase !== "lobby" || !r.vis || r.vis === "call") continue;
+    if (r.vis === "server" && (!guild || r.guild !== guild)) continue;
+    if (g.seats.length >= GAMES[g.type].max) continue;
+    out.push({ room: r.id, game: g.type, name: GAMES[g.type].name, host: g.names[g.hostId]?.name || "?", seats: g.seats.length, max: GAMES[g.type].max, vis: r.vis, sameServer: !!guild && r.guild === guild });
+  }
+  return out.sort((a, b) => +b.sameServer - +a.sameServer).slice(0, 40);
+}
+// Online actions; returns true when handled.
+function online(room: Room, user: User, m: any): boolean {
+  switch (m.t) {
+    case "meta":
+      if (typeof m.guild === "string" && /^\d{5,25}$/.test(m.guild)) { userGuild.set(user.id, m.guild); if (!room.id.startsWith("mm:") && !homeRoom.has(user.id)) room.guild = room.guild || m.guild; }
+      return true;
+    case "emote": {
+      const i = Number(m.e), now = Date.now();
+      if (!(i >= 0 && i < EMOTES.length) || now - (lastEmote.get(user.id) || 0) < 800) return true;
+      lastEmote.set(user.id, now);
+      for (const mm of room.members.values()) sendTo(room, mm.user.id, { t: "emote", from: user.id, name: user.name, e: EMOTES[i] });
+      return true;
+    }
+    case "vis": {
+      const g = room.game;
+      if (!g || g.phase !== "lobby" || g.hostId !== user.id || !["call", "server", "public"].includes(m.v)) return true;
+      room.vis = m.v; broadcast(room); return true;
+    }
+    case "browse":
+      sendTo(room, user.id, { t: "online", lobbies: lobbiesFor(user, room.id), queues: Object.fromEntries([...queues].filter(([, q]) => q.length).map(([k, q]) => [k, q.length])) });
+      return true;
+    case "joinroom": {
+      const target = rooms.get(String(m.room)), g = target?.game;
+      if (!target || !g || g.phase !== "lobby") { sendTo(room, user.id, { t: "err", msg: "That lobby is gone" }); return true; }
+      if (!lobbiesFor(user, room.id).some((l) => l.room === target.id)) { sendTo(room, user.id, { t: "err", msg: "Can't join that lobby" }); return true; }
+      const mine = room.game;
+      if (mine && mine.phase === "playing" && mine.seats.includes(user.id)) { sendTo(room, user.id, { t: "err", msg: "Finish your current game first" }); return true; }
+      leaveQueues(user.id);
+      if (!homeRoom.has(user.id)) homeRoom.set(user.id, room.id);
+      moveUser(user, room.id, target.id);
+      handle(target, user, { t: "sit" });
+      broadcast(target); return true;
+    }
+    case "qm": {
+      if (!GAMES[m.game]) return true;
+      const mine = room.game;
+      if (mine && mine.phase === "playing" && mine.seats.includes(user.id)) { sendTo(room, user.id, { t: "err", msg: "Finish your current game first" }); return true; }
+      leaveQueues(user.id);
+      const q = queues.get(m.game) || []; q.push({ user, at: Date.now() }); queues.set(m.game, q);
+      notifyQueue(m.game); tryMatch(m.game); return true;
+    }
+    case "qmcancel": leaveQueues(user.id); sendTo(room, user.id, { t: "queue", game: "", n: 0, need: 0 }); return true;
+    case "home": {
+      const g = room.game;
+      if (g && g.phase === "playing" && g.seats.includes(user.id) && g.seats.filter((x) => !isBot(x)).length > 1) { sendTo(room, user.id, { t: "err", msg: "Finish or resign this game first" }); return true; }
+      returnHome(user); return true;
+    }
+  }
+  return false;
+}
 function getRoom(id: string): Room { let r = rooms.get(id); if (!r) { r = { id, members: new Map(), game: null }; rooms.set(id, r); } return r; }
 
 function status(room: Room, uid: string) {
@@ -241,7 +358,7 @@ function view(room: Room, uid: string) {
       state: g.state ? mod.view(g.state, seat) : null, turn: g.state && g.phase === "playing" ? mod.turn(g.state) : null,
       turnDeadline: g.phase === "playing" ? g.turnDeadline || 0 : 0, afkSeat: g.phase === "playing" ? (g.afkSeat ?? -1) : -1, now: Date.now() };
   }
-  return { t: "state", you: uid, members: [...room.members.values()].map((m) => ({ ...m.user, status: status(room, m.user.id) })), game };
+  return { t: "state", you: uid, members: [...room.members.values()].map((m) => ({ ...m.user, status: status(room, m.user.id) })), game, away: homeRoom.has(uid), vis: room.vis || "call", match: room.id.startsWith("mm:") };
 }
 const sendTo = (room: Room, uid: string, msg: any) => { const m = room.members.get(uid); if (m) for (const ws of m.sockets) ws.send(JSON.stringify(msg)); };
 function broadcast(room: Room) { for (const m of room.members.values()) for (const ws of m.sockets) ws.send(JSON.stringify(view(room, m.user.id))); }
@@ -373,7 +490,13 @@ const server = Bun.serve({
   },
   websocket: {
     async open(ws: any) {
-      const { user, room: rid } = ws.data; const room = getRoom(rid);
+      const { user } = ws.data;
+      const home = homeRoom.get(user.id);
+      if (home) { // they were playing elsewhere: put them back there if it still exists
+        const away = [...rooms.values()].find((r) => r.id !== home && r.game && r.game.seats.includes(user.id) && r.game.phase !== "over");
+        if (away) ws.data.room = away.id; else homeRoom.delete(user.id);
+      }
+      const rid = ws.data.room; const room = getRoom(rid);
       let m = room.members.get(user.id);
       if (!m) { m = { user, sockets: new Set() }; room.members.set(user.id, m); }
       m.sockets.add(ws);
@@ -385,6 +508,7 @@ const server = Bun.serve({
       const { user, room: rid } = ws.data; const room = getRoom(rid);
       let msg: any; try { msg = JSON.parse(String(raw)); } catch { return; }
       if (msg.t === "ping") return;
+      if (online(room, user, msg)) return;
       const err = handle(room, user, msg);
       if (err === "__done") return;
       if (err) ws.send(JSON.stringify({ t: "err", msg: err }));
@@ -397,6 +521,7 @@ const server = Bun.serve({
       m.sockets.delete(ws);
       if (m.sockets.size) return;
       room.members.delete(user.id);
+      leaveQueues(user.id);
       const g = room.game;
       if (g && g.phase === "lobby") handle(room, user, { t: "stand" });
       if (!room.members.size) {
