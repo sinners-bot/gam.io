@@ -169,6 +169,8 @@
     var gid = g ? g.id + ":" + g.phase : "hub";
     if (gid !== PR.gid) { PR.gid = gid; PR.start = Math.floor(Date.now() / 1000); }
     a.type = 0; a.timestamps = { start: PR.start };
+    // art uploaded under Rich Presence > Art Assets: one image per game (key = game id) plus "gamio" (the logo)
+    a.assets = g ? { large_image: g.type, large_text: g.name, small_image: "gamio", small_text: "GAM.IO" } : { large_image: "gamio", large_text: "GAM.IO" };
     var key = JSON.stringify(a);
     if (key === PR.key) return;
     PR.key = key; clearTimeout(PR.timer);

@@ -178,7 +178,7 @@
   };
   var cache = {};
   function logo(id) { if (!IC[id]) return null; if (!cache[id]) cache[id] = IC[id](); return cache[id]; }
-  window.__gxLogo = logo;
+  window.__gxLogo = logo; window.__gxTile = TILE;
   var baseArt = art;
   art = function (id, small) {
     var l = logo(id); if (!l) return baseArt(id, small);
