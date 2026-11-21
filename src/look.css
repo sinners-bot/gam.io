@@ -1,5 +1,5 @@
 /* ================= GAM.IO look: logos, cards, pages (loads last) ================= */
-html{background:#0f0c29}body{background-attachment:fixed!important;min-height:100vh}
+html{background:#0f0c29}body{background-attachment:fixed!important}
 /* ---- logo tiles ---- */
 .art.gx-art{background:
   radial-gradient(120% 90% at 50% 115%,color-mix(in srgb,var(--tg) 45%,transparent),transparent 60%),

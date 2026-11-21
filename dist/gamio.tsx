@@ -680,6 +680,69 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     return h.replace(/<span>([^<]*) • ([^<]*)<\/span>/, '<span class="gx-meta"><i>' + esc(m.cat) + '</i><i class="pl">👥 ' + esc(who) + "</i></span>");
   };
 })();
+
+// ---------- GAM.IO fit: the activity fills the window like an app, on any screen size (loads last) ----------
+(function () {
+  // 1) big screens: scale the whole interface up so it doesn't look like a small website in a huge window
+  var lastZ = 0;
+  function rootZoom() {
+    var w = window.innerWidth, h = window.innerHeight, z = 1;
+    if (w >= 1000) z = Math.max(1, Math.min(w / 1440, h / 860, 2.2));
+    z = Math.round(z * 20) / 20;
+    if (z !== lastZ) { lastZ = z; document.body.style.zoom = z === 1 ? "" : String(z); document.documentElement.style.setProperty("--uiz", z); }
+  }
+  // 2) in a game: zoom the board area so it fills the space between the header and the bottom of the window
+  var NOFIT = { draw: 1, pool: 1 }; // these size their own canvas to the window already
+  function fitGame() {
+    var gb = app.querySelector(".shell.ingame .gbody"), g = S.game;
+    if (!gb || !g) return;
+    gb.style.zoom = "";
+    if (g.phase === "lobby" || NOFIT[g.type]) return;
+    var main = app.querySelector(".main"); if (!main) return;
+    var mr = main.getBoundingClientRect(), r = gb.getBoundingClientRect();
+    if (!r.width) return;
+    var top = r.top, bottom = top, w0 = 0, kids = gb.children;
+    for (var i = 0; i < kids.length; i++) {
+      var k = kids[i], cr = k.getBoundingClientRect(), cs = getComputedStyle(k);
+      if (cs.position === "fixed" || cs.position === "absolute" || !cr.height) continue;
+      bottom = Math.max(bottom, cr.bottom + (parseFloat(cs.marginBottom) || 0));
+      if (cr.width < r.width - 2) w0 = Math.max(w0, cr.width); // things that stretch to full width don't limit the zoom
+    }
+    if (!w0) w0 = r.width;
+    var h0 = bottom - top, availH = mr.bottom - top - 10, availW = r.width;
+    if (h0 < 20) return;
+    var s = Math.max(0.35, Math.min(availW / w0, availH / h0, 1.9));
+    if (Math.abs(s - 1) < 0.04) return;
+    gb.style.zoom = String(Math.round(s * 100) / 100);
+    // layouts can reflow at the new size (e.g. two boards fit side by side), so measure again and adjust
+    for (var it = 0; it < 3; it++) {
+      var m = measure(gb); if (!m) return;
+      var r2 = gb.getBoundingClientRect(), k2 = Math.min(r2.width / (m.w || r2.width), (mr.bottom - r2.top - 10) / m.h);
+      if (Math.abs(k2 - 1) < 0.03) return;
+      s = Math.max(0.35, Math.min(s * k2, 1.9)); gb.style.zoom = String(Math.round(s * 100) / 100);
+    }
+  }
+  function measure(gb) {
+    var r = gb.getBoundingClientRect(), bottom = r.top, w0 = 0, kids = gb.children;
+    for (var i = 0; i < kids.length; i++) {
+      var k = kids[i], cr = k.getBoundingClientRect(), cs = getComputedStyle(k);
+      if (cs.position === "fixed" || cs.position === "absolute" || !cr.height) continue;
+      bottom = Math.max(bottom, cr.bottom);
+      if (cr.width < r.width - 2) w0 = Math.max(w0, cr.width);
+    }
+    return bottom > r.top ? { h: bottom - r.top, w: w0 } : null;
+  }
+  var baseRender = render;
+  render = function () {
+    rootZoom();
+    baseRender.apply(this, arguments);
+    try { fitGame(); } catch (e) { console.error("fit", e); }
+  };
+  var rt = null;
+  window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { rootZoom(); render(); }, 120); });
+  rootZoom();
+  window.__fitGame = fitGame;
+})();
 `;
 const CSS: string = String.raw`/* ================= GAM.IO pack (loads last) ================= */
 .brand-t span{margin-left:0}
@@ -840,7 +903,7 @@ body.gx-myturn .plc.turn{animation:gx-chip 1.2s ease-in-out infinite}
 }
 
 /* ================= GAM.IO look: logos, cards, pages (loads last) ================= */
-html{background:#0f0c29}body{background-attachment:fixed!important;min-height:100vh}
+html{background:#0f0c29}body{background-attachment:fixed!important}
 /* ---- logo tiles ---- */
 .art.gx-art{background:
   radial-gradient(120% 90% at 50% 115%,color-mix(in srgb,var(--tg) 45%,transparent),transparent 60%),
@@ -934,6 +997,41 @@ html{background:#0f0c29}body{background-attachment:fixed!important;min-height:10
   .lobby>.art{height:150px}
 }
 .tag.t-new{display:none}
+
+/* ================= GAM.IO fit: app-style full-window layout ================= */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{margin:0}
+.shell.ingame .top{display:none}
+#app{height:100%}
+.splash{min-height:100%}
+.shell{height:100%;min-height:0!important;box-sizing:border-box;align-items:stretch}
+.side{position:relative!important;top:0!important;height:auto!important;min-height:0;overflow-y:auto;scrollbar-width:none}
+.side::-webkit-scrollbar{display:none}
+.main{min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:4px;scrollbar-width:thin;scrollbar-color:#ffffff22 transparent}
+.main::-webkit-scrollbar{width:8px}.main::-webkit-scrollbar-thumb{background:#ffffff22;border-radius:8px}
+.right{min-height:0;overflow-y:auto;scrollbar-width:none}.right::-webkit-scrollbar{display:none}
+/* in a game the board is zoomed to fit, so the game column never needs to scroll */
+.shell.ingame .main{overflow:hidden}
+.shell.ingame .content{flex:1;min-height:0;display:flex;flex-direction:column}
+.shell.ingame .gbody{flex:none;transform-origin:top center}
+.shell.ingame .g-draw,.shell.ingame .g-pool{flex:1;min-height:0}
+.shell.ingame .main:has(.g-draw),.shell.ingame .main:has(.g-pool),.shell.ingame .main:has(.lobby){overflow-y:auto}
+.ghead{flex:none}
+.top{flex:none}
+@media (max-width:760px),(max-height:500px){
+  .shell,.shell.ingame{grid-template-columns:1fr!important;padding:10px 10px 76px!important;gap:10px}
+  .shell.ingame{padding-bottom:10px!important}
+  .side,.right{display:none!important}
+  .bnav{display:flex!important;position:fixed;left:0;right:0;bottom:0;z-index:4}
+  .shell.ingame~.bnav{display:none!important}
+  .top{margin-bottom:8px;min-height:40px}
+}
+@media (max-height:560px) and (min-width:761px){
+  .side{padding:12px 10px;gap:10px}.brand-i .gx-mark{width:48px;height:48px}.brand-t{font-size:18px}
+  .ni{padding:9px 12px}
+  .shell{padding:10px;gap:12px}
+}
+@media (max-width:760px){.ghead h2{font-size:18px;white-space:nowrap;gap:8px}.ghead h2 .art.sm{width:34px;height:34px}.ghead .ghost{padding:8px 10px;font-size:14px}}
 `;
 const h = (t: string) => new Bun.CryptoHasher("sha256").update(t).digest("hex").slice(0, 16);
 Bun.serve({
