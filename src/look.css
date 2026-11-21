@@ -10,8 +10,8 @@ html{background:#0f0c29}body{background-attachment:fixed!important;min-height:10
 .gx-ic{height:88%;max-height:118px;width:auto;filter:drop-shadow(0 8px 10px #0008);transition:transform .35s cubic-bezier(.2,.9,.3,1.3)}
 .art.sm.gx-art{border-radius:12px;box-shadow:inset 0 0 0 1px #ffffff1a}
 .art.sm .gx-ic{height:96%;filter:drop-shadow(0 2px 3px #0008)}
-.brand-i .gx-mark{width:58px;height:58px;filter:drop-shadow(0 6px 18px #9d5cffaa);animation:gx-float 4s ease-in-out infinite}
-@keyframes gx-float{50%{transform:translateY(-4px) rotate(-3deg)}}
+.brand-i{font-size:0}.brand-i .gx-mark{width:72px;height:72px;display:block;margin:0 auto;border-radius:18px;filter:drop-shadow(0 8px 20px #9d5cff99);animation:gx-float 4s ease-in-out infinite}
+@keyframes gx-float{50%{transform:translateY(-4px)}}
 .brand-t{font-size:24px;letter-spacing:2px;background:linear-gradient(90deg,#fff,#e4d6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .brand-t span{background:linear-gradient(90deg,#c58bff,#7c4dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 
