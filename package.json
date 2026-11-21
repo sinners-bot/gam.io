@@ -1,0 +1,14 @@
+{
+  "name": "game-night",
+  "private": true,
+  "type": "module",
+  "description": "Game Night — a Plato-style Discord Activity with 22 multiplayer games, hosted as Railway Functions",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node check.mjs",
+    "test": "node --experimental-strip-types --no-warnings tests/sim-cards.mjs 5 && node --experimental-strip-types --no-warnings tests/sim-pool-ludo.mjs 5 && node --experimental-strip-types --no-warnings tests/poker-chips.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,54 @@
+/* ---------- Pool + Ludo ---------- */
+.art-pool{background:radial-gradient(circle at 50% 55%,#1f9e6a88,transparent 60%),linear-gradient(135deg,#11654a,#2a1660)}
+.art-ludo{background:conic-gradient(from 45deg,#ff4d6d66 0 25%,#3ddc8466 0 50%,#ffd84d66 0 75%,#4d9dff66 0),linear-gradient(135deg,#3b1d8f,#1d1456)}
+.poolbar{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.pp{display:flex;align-items:center;gap:8px;background:#ffffff0d;border:1px solid var(--line);border-radius:99px;padding:5px 14px 5px 5px;font-size:14px}
+.pp.turn{box-shadow:0 0 0 2px var(--gold),0 0 16px #ffc83d88}.vs{font-weight:900;color:#cfc8ff}
+.grp{font-size:11px;background:#ffffff14;border-radius:99px;padding:2px 9px;color:#cfc8ff}.grp.solid{background:#f5c51833;color:#ffe27a}.grp.stripe{background:#2f6bff33;color:#a9c4ff}.grp.eight{background:#000;color:#fff}
+.poolwrap{max-width:980px;margin:0 auto}#pool-cv{width:100%;height:auto;display:block;border-radius:22px;box-shadow:0 14px 40px #0009,0 0 0 2px #b05cff44;cursor:crosshair;touch-action:manipulation}
+.pmsg{text-align:center;color:#cfc8ff;font-size:13px;min-height:18px;margin:4px 0}
+.poolctl{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}.poolctl label{display:flex;gap:8px;align-items:center;font-weight:700;background:#ffffff0d;border-radius:99px;padding:6px 14px}
+.poolctl input[type=range]{width:200px;accent-color:#ff4d8d}
+.ludo{display:flex;gap:20px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.lboard{display:grid;grid-template-columns:repeat(15,1fr);grid-template-rows:repeat(15,1fr);width:min(540px,92vw);aspect-ratio:1;background:#f4f1ff;border-radius:16px;padding:6px;gap:2px;box-shadow:0 14px 40px #0009,0 0 0 4px #3b2a7a;position:relative}
+.lc{background:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#b7a9e8;box-shadow:inset 0 0 0 1px #00000014}
+.lc.c0,.yard.c0{background:#ff4d6d}.lc.c1,.yard.c1{background:#3ddc84}.lc.c2,.yard.c2{background:#ffd84d}.lc.c3,.yard.c3{background:#4d9dff}
+.lc.st{box-shadow:inset 0 0 0 2px #fff}
+.yard{border-radius:14px;opacity:.9;margin:2px}
+.lc.spot{background:#ffffffd9;border-radius:50%;margin:3px;z-index:1;box-shadow:inset 0 2px 6px #0003}
+.lcenter{background:conic-gradient(from 225deg,#ff4d6d 0 25%,#3ddc84 0 50%,#ffd84d 0 75%,#4d9dff 0);border-radius:6px;margin:1px}
+.tok{z-index:3;border-radius:50%;margin:12%;border:3px solid #fff;box-shadow:0 3px 6px #0007;transition:transform .2s}
+.tok.c0{background:radial-gradient(circle at 35% 30%,#ff9db0,#d81b47)}.tok.c1{background:radial-gradient(circle at 35% 30%,#a8f5c8,#16a35b)}.tok.c2{background:radial-gradient(circle at 35% 30%,#fff1a8,#d9a400)}.tok.c3{background:radial-gradient(circle at 35% 30%,#b3d4ff,#1c63d9)}
+.tok.mv{cursor:pointer;animation:tokpulse .8s ease-in-out infinite;z-index:4}.tok.moved{box-shadow:0 0 0 3px #b05cff,0 3px 6px #0007}
+@keyframes tokpulse{0%,100%{box-shadow:0 0 0 3px #fff,0 0 14px 4px #ffc83d}50%{box-shadow:0 0 0 3px #ffc83d,0 0 22px 8px #ffc83dcc}}
+.lside{display:flex;flex-direction:column;gap:8px;min-width:230px;max-width:300px}
+.lp{display:flex;align-items:center;gap:8px;background:#ffffff0d;border:1px solid var(--line);border-radius:14px;padding:6px 10px;font-size:14px}.lp.turn{box-shadow:0 0 0 2px var(--gold),0 0 14px #ffc83d88}
+.lp .sw{width:10px;height:28px;border-radius:4px}.lp em{margin-left:auto;font-style:normal;font-size:12px;color:#cfc8ff}
+.ldiebox{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}
+.ldie{width:64px;height:64px;background:#fff;border-radius:14px;display:grid;grid-template-columns:repeat(3,1fr);padding:9px;gap:3px;box-shadow:0 6px 16px #0008,inset 0 -4px 0 #ddd}
+.ldie i{border-radius:50%}.ldie i.on{background:#2b1665}.ldie.roll{animation:dieroll .5s ease-out}
+@keyframes dieroll{0%{transform:rotate(-200deg) scale(.6)}70%{transform:rotate(15deg) scale(1.1)}100%{transform:none}}
+.muted.small{font-size:12px}
+/* ---- idle timer + connection banner ---- */
+.afkbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:#1b1140f2;border:1px solid var(--line);color:#ddd8ff;font-weight:700;font-size:13px;padding:8px 16px;border-radius:99px;box-shadow:0 8px 24px #0009;white-space:nowrap}
+.afkbar.mine{border-color:var(--gold);color:#ffe27a}.afkbar.urgent{background:#5a1030f2;border-color:#ff4d8d;color:#fff;animation:afkp .8s ease-in-out infinite}
+@keyframes afkp{50%{transform:translateX(-50%) scale(1.05)}}
+.netbanner{position:fixed;top:0;left:0;right:0;z-index:80;background:#ff4d8d;color:#fff;text-align:center;font-weight:800;padding:8px;font-size:13px}
+#pool-cv.vert{width:auto;max-width:100%;max-height:62vh;margin:0 auto}
+/* ---- phones ---- */
+@media (max-width:640px){
+  .gbody{padding-bottom:96px}
+  .afkbar{bottom:84px;font-size:12px;max-width:94vw;white-space:normal;text-align:center}
+  .thand{flex-wrap:wrap;justify-content:center;row-gap:8px;padding:0 4px}
+  .thand .card{width:46px;height:66px;border-radius:8px}.thand .card span{font-size:14px}.thand .card b{font-size:18px}
+  .thand .card+.card{margin-left:-16px}
+  .uhand .uc{width:52px;height:76px}.uhand .uc b{font-size:20px}.uhand .uc+.uc{margin-left:-14px}
+  .t4{height:250px}.tc .card{transform:scale(.7)}
+  .teams{gap:6px;margin-bottom:22px}.team{min-width:0;flex:1;padding:6px 10px}.team b{font-size:22px}
+  .bids .lvb{min-width:38px;padding:6px 0}
+  .pktable{border-radius:24px;padding:10px}.board{gap:4px}.board .card{width:46px;height:66px}
+  .pseats{gap:6px}.ps{min-width:0;width:calc(50% - 6px)}
+  .pkact .raise{width:100%;justify-content:center}.pkact input[type=range]{width:120px}
+  .poolbar{gap:6px}.pp{font-size:12px}.poolctl input[type=range]{width:130px}
+  .ludo{gap:12px}.lside{min-width:0;width:100%;max-width:none}
+}
