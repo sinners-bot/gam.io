@@ -102,3 +102,7 @@ Players can quick-match or browse open lobbies across Discord servers (🌍 butt
 ## Tables
 
 Each Discord call is a hub. Picking a game opens a separate table (`<call>#<n>`), so several games, even of the same type, can run at once. Others in the call get an invite and can join or watch from the Tables list. If someone leaves mid-game while other people are still playing, a Medium bot takes their seat. Per-game turn times are in `TURN_SECS` in `src/server.ts`.
+
+## Deploying (loader services)
+
+`game-night`, `game-night-legal` and `game-night-gamio` run a small loader that downloads their bundle from this repo (`dist/server.tsx`, `dist/legal.tsx`, `dist/gamio.tsx`) at the commit set in the service's `SRC_REF` variable. To ship a change: run `node build.mjs`, commit and push, then set `SRC_REF` on the affected services to the new commit SHA, which redeploys them. The repo must stay public for the loaders to fetch it, or the loaders need a GitHub token. The other UI packs still hold their code inline in Railway.
