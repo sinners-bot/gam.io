@@ -1676,6 +1676,22 @@ const server = Bun.serve({
       if (!r.ok) { console.error("token exchange failed", d); return json({ error: "token exchange failed" }, 400); }
       return json({ access_token: d.access_token });
     }
+    // share card: the player's own Discord token uploads their result picture as a temporary Discord attachment,
+    // whose CDN link the client hands to the "share moment" dialog
+    if (path === "/api/share" && req.method === "POST") {
+      const auth = req.headers.get("authorization") || "";
+      if (!/^Bearer [\w.-]{10,200}$/.test(auth)) return json({ error: "not signed in with Discord" }, 401);
+      const buf = await req.arrayBuffer();
+      if (buf.byteLength < 100 || buf.byteLength > 3_000_000) return json({ error: "bad image" }, 400);
+      const head = new Uint8Array(buf, 0, 4);
+      if (head[0] !== 0x89 || head[1] !== 0x50 || head[2] !== 0x4e || head[3] !== 0x47) return json({ error: "png only" }, 400);
+      const fd = new FormData();
+      fd.append("file", new Blob([buf], { type: "image/png" }), "gamio-result.png");
+      const r = await fetch("https://discord.com/api/applications/" + CLIENT_ID + "/attachment", { method: "POST", headers: { Authorization: auth }, body: fd });
+      const d: any = await r.json().catch(() => ({}));
+      if (!r.ok || !d.attachment || !d.attachment.url) { console.error("share upload failed", r.status, JSON.stringify(d).slice(0, 300)); return json({ error: "upload failed" }, 502); }
+      return json({ url: d.attachment.url });
+    }
     const av = path.match(/^\/avatar\/(\d+)\/(\w+)$/);
     if (av) {
       const r = await fetch(`https://cdn.discordapp.com/avatars/${av[1]}/${av[2]}.png?size=128`);

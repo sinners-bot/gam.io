@@ -754,6 +754,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
 
   // ===== brand mark =====
   var LOGO = "data:image/webp;base64,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";
+  window.__gxBrand = LOGO;
   var MARK = '<img class="gx-mark" src="' + LOGO + '" alt="GAM.IO">';
   try { var fav = document.querySelector('link[rel="icon"]') || document.head.appendChild(Object.assign(document.createElement("link"), { rel: "icon" })); fav.href = LOGO; } catch (e) {}
   var baseSide = sidebar;
@@ -1291,8 +1292,31 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     if (!g || !g.type) return h;
     if (g.type === "chess") h = h.replace(RX_PC, function (_, s, sym) { return '<span class="pc ' + s + '">' + piece(sym, s) + "</span>"; }).replace(RX_KC, function (_, s) { return '<i class="kc ' + s + '">' + piece("♚", s) + "</i>"; });
     if (g.type === "ttt" || g.type === "uttt") h = h.replace(/<b class="mk x">✕<\/b>/g, MX).replace(/<b class="mk o">◯<\/b>/g, MO);
+    if (g.type === "draw" && g.state) h = h.replace(/<b class="?word( mask)?"?>[^<]*<\/b>( <small>\(\d+\)<\/small>)?/, function () { return tiles(g.state); });
     return h;
   };
+
+  // ===== Draw & Guess: the word as letter tiles =====
+  function tiles(st) {
+    var w = st.word ? st.word.toUpperCase() : (st.mask || "").replace(/ /g, "\u00a0"), out = "", k = 0;
+    if (st.word) w = w.replace(/ /g, "\u00a0");
+    for (var i = 0; i < w.length; i++) {
+      var ch = w[i];
+      if (ch === "\u00a0") { out += '<i class="dt sp"></i>'; continue; }
+      var open = st.word || ch !== "_";
+      out += '<i class="dt' + (open ? " on" : "") + (st.word ? " gold" : "") + '" style="--d:' + (k++ * 45) + 'ms">' + (open ? (ch === "_" ? "" : ch) : "") + "</i>";
+    }
+    return '<span class="dtiles">' + out + "</span>";
+  }
+  // a brush-sized cursor over the drawing canvas
+  var brush = document.createElement("div"); brush.id = "gx-brush"; document.documentElement.appendChild(brush);
+  document.addEventListener("pointermove", function (e) {
+    var cvs = e.target && e.target.id === "dgc" ? e.target : null, slot = cvs && cvs.closest(".dgslot.mine");
+    if (!slot || e.pointerType === "touch") { brush.style.display = "none"; return; }
+    var szb = app.querySelector(".tools .sz.on"), swb = app.querySelector(".tools .sw.on");
+    var w = szb ? +szb.getAttribute("data-w") : 8, col = swb ? swb.getAttribute("data-c") : "#000", r = cvs.getBoundingClientRect(), d = Math.max(4, w * r.width / 1000);
+    brush.style.cssText = "display:block;width:" + d + "px;height:" + d + "px;left:" + (e.clientX - d / 2) + "px;top:" + (e.clientY - d / 2) + "px;border-color:" + (col === "#ffffff" ? "#999" : col);
+  });
 
   // ===== effects canvas: sparks and confetti =====
   var cv = null, ctx = null, parts = [], raf = 0;
@@ -1337,6 +1361,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     kick();
   }
   window.__gxFx = { burst: burst, confetti: confetti };
+  window.__gxRender = function () { render(); };
 
   // ===== after every render: animate only what actually changed =====
   var prev = {}, lastGid = null, lastPhase = null;
@@ -1361,6 +1386,8 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
       for (var i = 0; i < els.length; i++) { now.push(sig(els[i], w.kind)); if (old && old.length === els.length && old[i] !== now[i] && now[i]) w.fx(els[i]); }
       prev[w.sel] = now;
     });
+    // Draw & Guess: someone guessed it
+    var oks = app.querySelectorAll("#dg-msgs p.ok"); if (prev.__ok != null && oks.length > prev.__ok) { var lastOk = oks[oks.length - 1]; lastOk.classList.add("fresh"); burst(lastOk, "#3ddc84", 18); var tl = app.querySelector(".dtiles"); if (tl) burst(tl, "#ffd84d", 10); } prev.__ok = oks.length;
     // pieces that just landed
     var d = app.querySelector(".c4 .disc[data-new]"); if (d && d.__fx !== 1) { d.__fx = 1; var col = getComputedStyle(d).getPropertyValue("--pc"); setTimeout(function () { burst(d, col.trim() || "#ffd84d", 16); }, 320); }
     var rd = app.querySelector(".rv .rd.new"); if (rd && rd.__fx !== 1) { rd.__fx = 1; burst(rd, rd.classList.contains("p1") ? "#b9b2d8" : "#ffffff", 12); }
@@ -1378,6 +1405,258 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   render = function () {
     baseRender.apply(this, arguments);
     try { afterRender(); } catch (e) { console.error("polish", e); }
+  };
+})();
+
+// ---------- GAM.IO card motion: cards fly between hands, the table, piles and the trick winner ----------
+// Cards are animated as fixed-position "ghost" copies flying between real screen rectangles,
+// so the motion lands exactly even when the game view is zoomed to fit the window.
+(function () {
+  var layer = null;
+  function L() { if (!layer || !layer.isConnected) { layer = document.createElement("div"); layer.id = "gx-cardfx"; document.documentElement.appendChild(layer); } return layer; }
+  function R(el) { if (!el) return null; var r = el.getBoundingClientRect(); if (!r.width) return null; return { x: r.left, y: r.top, w: r.width, h: r.height, bw: el.offsetWidth || r.width, bh: el.offsetHeight || r.height }; }
+  function centerOf(r, w, h) { return { x: r.x + r.w / 2 - w / 2, y: r.y + r.h / 2 - h / 2, w: w, h: h, bw: r.bw, bh: r.bh }; }
+  var EASE = "cubic-bezier(.22,.8,.24,1)";
+  // fly a copy of the card html from rect a to rect b; hide the target until it lands
+  function ghost(html, a, b, o) {
+    if (window.__gxCalm || !a || !b) return;
+    o = o || {};
+    var g = document.createElement("div"); g.className = "gx-ghost"; g.innerHTML = html;
+    var bw = b.bw || b.w, bh = b.bh || b.h;
+    g.style.cssText = "position:fixed;left:0;top:0;width:" + bw + "px;height:" + bh + "px;transform-origin:0 0;pointer-events:none;z-index:80";
+    L().appendChild(g);
+    var t = o.target;
+    if (t) { t.getAnimations && t.getAnimations().forEach(function (an) { an.cancel(); }); t.style.visibility = "hidden"; }
+    var s0 = a.w / bw, s1 = b.w / bw, r0 = o.rot || 0, r1 = o.endRot || 0, arc = o.arc == null ? 40 : o.arc;
+    var kf = [
+      { transform: "translate(" + a.x + "px," + a.y + "px) scale(" + s0 + ") rotate(" + r0 + "deg)", opacity: o.fadeIn ? 0 : 1 },
+      { transform: "translate(" + (a.x + b.x) / 2 + "px," + ((a.y + b.y) / 2 - arc) + "px) scale(" + ((s0 + s1) / 2) * (o.lift || 1.08) + ") rotate(" + (r0 + r1) / 2 + "deg)", opacity: 1, offset: 0.5 },
+      { transform: "translate(" + b.x + "px," + b.y + "px) scale(" + s1 + ") rotate(" + r1 + "deg)", opacity: o.fadeOut ? 0 : 1 },
+    ];
+    var an = g.animate(kf, { duration: o.dur || 480, delay: o.delay || 0, easing: EASE, fill: "both" });
+    var done = function () { g.remove(); if (t) { t.style.visibility = ""; if (o.flip && t.animate) t.animate([{ transform: "perspective(600px) rotateY(90deg)" }, { transform: "none" }], { duration: 220, easing: "ease-out" }); else if (o.land !== false && t.animate) t.animate([{ transform: "scale(1.06)" }, { transform: "none" }], { duration: 160, easing: "ease-out" }); } if (o.done) o.done(); };
+    an.onfinish = done; an.oncancel = done;
+    if (o.sfx && window.__gxSfx) setTimeout(window.__gxSfx, (o.delay || 0) + (o.dur || 480) * 0.85);
+  }
+  // the engine fades out cards that left the screen; drop those copies when we fly the card somewhere instead
+  function killExit(card) { document.querySelectorAll('.gx-exit[data-card="' + card + '"],.gx-exit [data-card="' + card + '"]').forEach(function (e) { (e.classList.contains("gx-exit") ? e : e.closest(".gx-exit")).remove(); }); }
+  var BACK = '<div class="card back"></div>';
+  function html(el) { var c = el.cloneNode(true); c.removeAttribute("data-fk"); c.style.visibility = ""; c.classList.remove("sel", "new", "play", "can"); return c.outerHTML; }
+  // a soft card "snap" sound
+  window.__gxSfx = function () {
+    if (window.__gxMute) return;
+    try {
+      var A = window.__gxAC || (window.__gxAC = new (window.AudioContext || window.webkitAudioContext)()), n = A.sampleRate * 0.05, b = A.createBuffer(1, n, A.sampleRate), d = b.getChannelData(0);
+      for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+      var s = A.createBufferSource(), f = A.createBiquadFilter(), v = A.createGain(); s.buffer = b; f.type = "bandpass"; f.frequency.value = 2400; v.gain.value = 0.18 * (window.__gxVol == null ? 1 : window.__gxVol);
+      s.connect(f); f.connect(v); v.connect(A.destination); s.start();
+    } catch (e) {}
+  };
+
+  // ===================== Hearts / Spades =====================
+  function snapTable(g) {
+    var t = app.querySelector(".t4"); if (!t) return null;
+    var seats = {}; ["s", "w", "n", "e"].forEach(function (k) { seats[k] = R(t.querySelector(".ts-" + k)); });
+    var trick = [];
+    t.querySelectorAll(".tmid .tc").forEach(function (tc) { var c = tc.querySelector(".card[data-card]"); if (c) trick.push({ card: c.getAttribute("data-card"), r: R(c), html: html(c), rel: (tc.className.match(/tc-(\w)/) || [])[1], win: tc.classList.contains("win") }); });
+    var winRel = null; trick.forEach(function (x) { if (x.win) winRel = x.rel; });
+    var hand = app.querySelectorAll(".thand .card[data-card]").length;
+    return { seats: seats, trick: trick, winRel: winRel, hand: hand, mid: R(t.querySelector(".tmid")) || R(t), gid: g.id };
+  }
+  function animTable(p, g) {
+    var t = app.querySelector(".t4"); if (!t || !p || p.gid !== g.id) return;
+    var now = {}; t.querySelectorAll(".tmid .card[data-card]").forEach(function (c) { now[c.getAttribute("data-card")] = c; });
+    var had = {}; p.trick.forEach(function (x) { had[x.card] = 1; });
+    // opponents' cards fly in from their seat
+    Object.keys(now).forEach(function (card) {
+      if (had[card]) return;
+      var el = now[card], rel = (el.closest(".tc").className.match(/tc-(\w)/) || [])[1];
+      if (rel === "s") return; // my own card: the engine already slides it from my hand
+      var to = R(el), from = p.seats[rel] || R(t.querySelector(".ts-" + rel)); if (!to || !from) return;
+      ghost(html(el), centerOf(from, to.w * 0.55, to.h * 0.55), to, { target: el, rot: { w: -70, e: 70, n: 180, s: 0 }[rel] || 0, endRot: 0, dur: 460, arc: 26, sfx: 1 });
+    });
+    // a finished trick sweeps to whoever took it
+    var gone = p.trick.filter(function (x) { return !now[x.card]; });
+    if (gone.length && p.winRel) {
+      var dest = R(t.querySelector(".ts-" + p.winRel)) || p.seats[p.winRel];
+      gone.forEach(function (x, i) {
+        killExit(x.card);
+        if (!dest || !x.r) return;
+        ghost(x.html, x.r, centerOf(dest, x.r.w * 0.38, x.r.h * 0.38), { delay: i * 70, dur: 520, arc: 18, fadeOut: true, rot: 0, endRot: { w: -90, e: 90, n: 0, s: 0 }[p.winRel] || 0, lift: 1 });
+      });
+    }
+    // a new hand is dealt from the middle of the table
+    var hand = app.querySelectorAll(".thand .card[data-card]");
+    if (hand.length >= 8 && hand.length - p.hand >= 5) {
+      var mid = p.mid || R(t);
+      hand.forEach(function (el, i) { var to = R(el); if (!to || !mid) return; ghost(BACK, centerOf(mid, to.w * 0.7, to.h * 0.7), to, { target: el, flip: 1, delay: i * 55, dur: 420, arc: 60, rot: -25 + Math.random() * 50, sfx: i % 3 === 0 }); });
+    }
+  }
+
+  // ===================== Gin Rummy =====================
+  var GM = null; // the Gin state as it was last drawn (S.game is already the new state when render starts)
+  function memoGin(g) { var st = g && g.state; GM = st && g.type === "gin" ? { gid: g.id, stock: st.stock, top: st.top, opp: st.opp ? st.opp[g.seat >= 0 ? 1 - g.seat : 1] : 0, phase: st.phase } : null; }
+  function snapGin(g) {
+    var st = GM; if (!st || st.gid !== g.id || !app.querySelector(".g-gin")) return null;
+    var hand = {}; app.querySelectorAll(".gn-hand .card[data-card]").forEach(function (c) { hand[c.getAttribute("data-card")] = 1; });
+    var top = app.querySelector(".gn-disc .card[data-card]");
+    var backs = app.querySelectorAll(".gn-opp .card");
+    return { gid: g.id, stock: st.stock, top: st.top, topR: R(top), topHtml: top ? html(top) : "", opp: st.opp, oppR: R(backs[backs.length - 1]) || R(app.querySelector(".gn-opp")), stockR: R(app.querySelector(".gn-stock .card")), hand: hand, n: Object.keys(hand).length, phase: st.phase };
+  }
+  function animGin(p, g) {
+    var st = g.state; if (!p || p.gid !== g.id || !st || !app.querySelector(".g-gin")) return;
+    var oppNow = st.opp ? st.opp[g.seat >= 0 ? 1 - g.seat : 1] : 0;
+    var backs = app.querySelectorAll(".gn-opp .card"), oppR = R(backs[backs.length - 1]) || p.oppR, stockR = R(app.querySelector(".gn-stock .card")) || p.stockR;
+    var handEls = app.querySelectorAll(".gn-hand .card[data-card]");
+    // a fresh deal
+    if (handEls.length >= 10 && (p.n === 0 || p.phase === "show")) {
+      handEls.forEach(function (el, i) { var to = R(el); ghost(BACK, stockR, to, { target: el, flip: 1, delay: i * 60, dur: 420, arc: 50, sfx: i % 3 === 0 }); });
+      backs.forEach(function (el, i) { var to = R(el); ghost(BACK, stockR, to, { target: el, delay: i * 60 + 30, dur: 420, arc: 30 }); });
+      return;
+    }
+    // I drew from the stock
+    handEls.forEach(function (el) { var c = el.getAttribute("data-card"); if (!p.hand[c] && c !== p.top && st.stock === p.stock - 1) ghost(html(el), stockR, R(el), { target: el, rot: -12, dur: 520, arc: 70, sfx: 1 }); });
+    // the opponent drew
+    if (oppNow === p.opp + 1 && oppR) {
+      if (st.stock === p.stock - 1) ghost(BACK, stockR, oppR, { target: backs[backs.length - 1], dur: 480, arc: 40, sfx: 1 });
+      else if (p.top && p.topR) { killExit(p.top); ghost(p.topHtml, p.topR, oppR, { target: backs[backs.length - 1], dur: 480, arc: 40, endRot: 180, sfx: 1 }); }
+    }
+    // the opponent discarded
+    if (oppNow === p.opp - 1 && st.top && st.top !== p.top) {
+      var topEl = app.querySelector(".gn-disc .card[data-card]");
+      if (topEl && p.oppR) ghost(html(topEl), p.oppR, R(topEl), { target: topEl, rot: 160, endRot: 0, dur: 520, arc: 50, sfx: 1 });
+    }
+  }
+
+  // ===================== wire into render =====================
+  var baseRender = render;
+  render = function () {
+    var g = S.game, p = null, kind = null, fresh = false;
+    try {
+      if (g && g.state && g.phase !== "lobby") {
+        if (g.type === "hearts" || g.type === "spades") { kind = "t"; p = snapTable(g); if (!p) fresh = true; }
+        else if (g.type === "gin") { kind = "g"; p = snapGin(g); }
+      }
+    } catch (e) { p = null; }
+    baseRender.apply(this, arguments);
+    try {
+      var g2 = S.game;
+      if (kind === "t" && fresh && g2 && g2.state) { var tt = app.querySelector(".t4"); if (tt) animTable({ seats: {}, trick: [], winRel: null, hand: 0, mid: R(tt.querySelector(".tmid")) || R(tt), gid: g2.id }, g2); }
+      if (p && g2 && g2.state) { if (kind === "t") animTable(p, g2); else animGin(p, g2); }
+      if (kind === "g" || (g2 && g2.type === "gin")) { if (kind === "g" && !p && g2 && g2.state && app.querySelector(".g-gin") && (!GM || GM.gid !== g2.id)) animGin({ gid: g2.id, stock: 99, top: null, opp: 0, phase: "show", n: 0, hand: {}, stockR: null, oppR: null }, g2); memoGin(g2); }
+    } catch (e) { console.error("cardfx", e); }
+  };
+})();
+
+// ---------- GAM.IO share cards: a picture of the result, shared to a Discord channel (or saved in a browser) ----------
+(function () {
+  var LOWER_BETTER = { hearts: 1 };
+  function seatName(s) { return s ? String(s.name || "?") : "?"; }
+  function scoresOf(g) {
+    var st = g.state || {}, n = g.seats.length, arr = null;
+    if (Array.isArray(st.scores) && st.scores.length === n) arr = st.scores;
+    else if (Array.isArray(st.score) && st.score.length === n) arr = st.score;
+    else if (Array.isArray(st.sn) && st.sn.length === n) arr = st.sn.map(function (x) { return x.score; });
+    if (arr && arr.every(function (x) { return typeof x === "number"; })) return arr;
+    return null;
+  }
+  function summary(g) {
+    var ws = g.winners || (g.winner ? [g.winner] : []), sc = scoresOf(g), lower = LOWER_BETTER[g.type];
+    var rows = g.seats.map(function (s, i) { return { i: i, name: seatName(s), bot: !!(s && s.bot), id: s && s.id, win: ws.indexOf(s && s.id) >= 0, score: sc ? sc[i] : null }; });
+    rows.sort(function (a, b) { if (a.win !== b.win) return a.win ? -1 : 1; if (sc) return lower ? a.score - b.score : b.score - a.score; return 0; });
+    var me = rows.filter(function (r) { return r.id === S.you; })[0], game = g.name || g.type;
+    var others = rows.filter(function (r) { return r !== me; }), bots = others.filter(function (r) { return r.bot; }).length;
+    var who = others.length === 1 ? others[0].name : bots === others.length ? others.length + " bots" : others.length + " players";
+    var head, sub = "";
+    if (me && me.win && ws.length === 1) head = me.name + " beat " + who + " at " + game;
+    else if (me && me.win) head = me.name + " tied for the win at " + game;
+    else if (!ws.length) head = "A draw at " + game + "!";
+    else head = rows[0].name + " won " + game;
+    if (me && sc) sub = me.score + (g.type === "hearts" ? " points (lowest wins)" : " points");
+    return { head: head, sub: sub, rows: rows.slice(0, 6), hasScore: !!sc, me: me };
+  }
+  function img(src) { return new Promise(function (res) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
+  function svgImg(svg) { if (!svg) return Promise.resolve(null); if (svg.indexOf("xmlns=") < 0) svg = svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" '); return img("data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg)); }
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+  var FONT = "Inter, 'Segoe UI', system-ui, sans-serif";
+  function fit(c, text, max, size, weight) { var s = size; do { c.font = (weight || 900) + " " + s + "px " + FONT; s -= 2; } while (c.measureText(text).width > max && s > 18); return s + 2; }
+  async function drawCard(g) {
+    var W = 1200, H = 630, cv = document.createElement("canvas"); cv.width = W; cv.height = H; var c = cv.getContext("2d"), sm = summary(g);
+    // background
+    var bg = c.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#2a1670"); bg.addColorStop(0.55, "#1a0f4a"); bg.addColorStop(1, "#0e0830"); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    var glow = c.createRadialGradient(300, 250, 20, 300, 250, 420); glow.addColorStop(0, "rgba(176,92,255,.45)"); glow.addColorStop(1, "rgba(176,92,255,0)"); c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    var glow2 = c.createRadialGradient(1050, 560, 10, 1050, 560, 380); glow2.addColorStop(0, "rgba(255,77,141,.3)"); glow2.addColorStop(1, "rgba(255,77,141,0)"); c.fillStyle = glow2; c.fillRect(0, 0, W, H);
+    for (var k = 0; k < 90; k++) { c.fillStyle = "rgba(255,255,255," + (0.08 + Math.random() * 0.3) + ")"; c.beginPath(); c.arc(Math.random() * W, Math.random() * H, Math.random() * 1.6, 0, 7); c.fill(); }
+    if (sm.me && sm.me.win) { c.save(); c.translate(300, 300); for (var r = 0; r < 24; r++) { c.rotate(Math.PI / 12); c.fillStyle = "rgba(255,216,77,.07)"; c.beginPath(); c.moveTo(0, 0); c.lineTo(520, -40); c.lineTo(520, 40); c.closePath(); c.fill(); } c.restore(); }
+    // game logo on its tile
+    var tile = (window.__gxTile && window.__gxTile[g.type]) || ["#4a3aa8", "#1d1452", "#b05cff"];
+    c.save(); c.shadowColor = "rgba(0,0,0,.55)"; c.shadowBlur = 40; c.shadowOffsetY = 16;
+    var tg = c.createLinearGradient(130, 120, 470, 460); tg.addColorStop(0, tile[0]); tg.addColorStop(1, tile[1]); c.fillStyle = tg; rr(c, 130, 130, 340, 340, 70); c.fill(); c.restore();
+    c.strokeStyle = tile[2] || "#b05cff"; c.globalAlpha = 0.6; c.lineWidth = 4; rr(c, 132, 132, 336, 336, 68); c.stroke(); c.globalAlpha = 1;
+    var gl = c.createLinearGradient(0, 130, 0, 300); gl.addColorStop(0, "rgba(255,255,255,.18)"); gl.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = gl; rr(c, 130, 130, 340, 170, 70); c.fill();
+    var gi = await svgImg(window.__gxLogo ? window.__gxLogo(g.type) : null); if (gi) c.drawImage(gi, 160, 160, 280, 280);
+    if (sm.me && sm.me.win) { c.font = "120px " + FONT; c.textAlign = "center"; c.fillText("🏆", 455, 175); }
+    // headline
+    c.textAlign = "left"; c.fillStyle = "#fff"; var X = 540, MAXW = W - X - 60;
+    c.font = "800 26px " + FONT; c.fillStyle = sm.me && sm.me.win ? "#ffd84d" : "#b9b0ff"; c.fillText(sm.me && sm.me.win ? "VICTORY" : (g.winners || []).length || g.winner ? "GAME OVER" : "DRAW", X, 150);
+    var words = sm.head.split(" "), lines = [], cur = "";
+    var size = 58; c.font = "900 " + size + "px " + FONT;
+    words.forEach(function (w) { var t = cur ? cur + " " + w : w; if (c.measureText(t).width > MAXW && cur) { lines.push(cur); cur = w; } else cur = t; }); lines.push(cur);
+    if (lines.length > 3) { size = 44; c.font = "900 " + size + "px " + FONT; lines = []; cur = ""; words.forEach(function (w) { var t = cur ? cur + " " + w : w; if (c.measureText(t).width > MAXW && cur) { lines.push(cur); cur = w; } else cur = t; }); lines.push(cur); lines = lines.slice(0, 3); }
+    c.fillStyle = "#fff"; c.shadowColor = "rgba(0,0,0,.4)"; c.shadowBlur = 12; lines.forEach(function (l, i) { c.fillText(l, X, 212 + i * (size + 8)); }); c.shadowBlur = 0;
+    var y = 212 + lines.length * (size + 8) + 4;
+    if (sm.sub) { c.font = "700 28px " + FONT; c.fillStyle = "#ffd84d"; c.fillText(sm.sub, X, y); y += 22; }
+    // standings
+    y += 22; var medals = ["🥇", "🥈", "🥉"];
+    sm.rows.slice(0, Math.min(sm.rows.length, y > 380 ? 3 : 4)).forEach(function (r, i) {
+      var rowY = y + i * 50; c.fillStyle = r === sm.me ? "rgba(255,216,77,.16)" : "rgba(255,255,255,.07)"; rr(c, X, rowY, MAXW, 42, 14); c.fill();
+      c.font = "26px " + FONT; c.fillText(r.win ? "🏆" : medals[i] || "·", X + 12, rowY + 31);
+      var nm = r.name + (r.bot ? " 🤖" : ""); c.fillStyle = "#fff"; fit(c, nm, MAXW - 190, 24, 800); c.fillText(nm, X + 56, rowY + 30);
+      if (r.score != null) { c.textAlign = "right"; c.font = "900 24px " + FONT; c.fillStyle = "#ffd84d"; c.fillText(String(r.score), X + MAXW - 16, rowY + 30); c.textAlign = "left"; }
+    });
+    // footer
+    var brand = window.__gxBrand ? await img(window.__gxBrand) : null;
+    c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(0, H - 74, W, 74);
+    if (brand) c.drawImage(brand, 40, H - 62, 50, 50);
+    c.font = "900 30px " + FONT; c.fillStyle = "#fff"; c.fillText("GAM.IO", brand ? 102 : 40, H - 26);
+    c.font = "600 22px " + FONT; c.fillStyle = "#cfc8ff"; c.textAlign = "right"; c.fillText("Play free in your Discord call · Activities → GAM.IO", W - 40, H - 28); c.textAlign = "left";
+    return cv;
+  }
+  function toast(t) { var n = document.createElement("div"); n.className = "gx-sharetoast"; n.textContent = t; document.documentElement.appendChild(n); setTimeout(function () { n.remove(); }, 3200); }
+  function tokenOf() { try { return new URLSearchParams(String(wsUrl).split("?")[1]).get("token"); } catch (e) { return null; } }
+  var busy = false;
+  async function share(btn) {
+    var g = S.game; if (!g || busy) return; busy = true; var label = btn.innerHTML; btn.innerHTML = "⏳ Making your card…"; btn.disabled = true;
+    try {
+      var cv = await drawCard(g), blob = await new Promise(function (r) { cv.toBlob(r, "image/png"); }), tok = tokenOf();
+      if (typeof sdk !== "undefined" && sdk && sdk.commands && sdk.commands.openShareMomentDialog && tok) {
+        var r = await fetch("/api/share", { method: "POST", headers: { Authorization: "Bearer " + tok, "Content-Type": "image/png" }, body: blob });
+        var d = await r.json().catch(function () { return {}; });
+        if (!d.url) throw new Error(d.error || "upload failed");
+        await sdk.commands.openShareMomentDialog({ mediaUrl: d.url });
+      } else {
+        var file = new File([blob], "gamio-result.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: "GAM.IO" });
+        else { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "gamio-result.png"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); toast("Saved your result card"); }
+      }
+    } catch (e) {
+      console.warn("share", e);
+      toast(/not supported|unsupported|platform/i.test(String(e && e.message)) ? "Sharing works from Discord on a computer" : "Couldn't share right now");
+    }
+    btn.innerHTML = label; btn.disabled = false; busy = false;
+  }
+  window.__gxShareCard = drawCard;
+  var baseRender = render;
+  render = function () {
+    baseRender.apply(this, arguments);
+    try {
+      var g = S.game; if (!g || g.phase !== "over" || g.seat < 0) return;
+      var acts = app.querySelector(".modal .box .actions"); if (!acts || acts.querySelector("[data-gxshare]")) return;
+      var b = document.createElement("button"); b.className = "btn gx-share"; b.setAttribute("data-gxshare", "1");
+      b.innerHTML = typeof sdk !== "undefined" && sdk ? "📸 Share result" : "📸 Save result card";
+      b.addEventListener("click", function (e) { e.stopPropagation(); share(b); });
+      acts.insertBefore(b, acts.firstChild);
+    } catch (e) { console.error("share", e); }
   };
 })();
 `;
@@ -1983,6 +2262,34 @@ body.gx-calm .nw .mk,body.gx-calm .nw .mk svg *,body.gx-calm .tumble,body.gx-cal
 /* ---- Word Hunt tiles ---- */
 .wt{transition:transform .1s}.wt:active{transform:translateY(3px);box-shadow:0 2px 0 #b09060}
 @media (max-width:640px){.t4,.pktable,.ctable,.ldtable{width:calc(100% - 28px)!important;margin-left:auto!important;margin-right:auto!important;box-shadow:inset 0 0 0 4px #ffffff0d,inset 0 0 50px #000b,0 0 0 6px #3a2212,0 0 0 8px #b2875a,0 16px 30px #000b!important}}
+
+/* ---- Draw & Guess ---- */
+.dtiles{display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:center;vertical-align:middle}
+.dt{font-style:normal;width:26px;height:32px;border-radius:7px;background:#ffffff12;box-shadow:inset 0 -3px 0 #0004,0 0 0 1px #ffffff22;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;color:#fff}
+.dt.sp{width:12px;background:none;box-shadow:none}
+.dt.on{background:linear-gradient(180deg,#8f7cff,#5b45d6);box-shadow:inset 0 -3px 0 #0005,0 2px 6px #0006;animation:gx-tileflip .45s var(--d) both}
+.dt.gold{background:linear-gradient(180deg,#ffe27a,#f0a72c);color:#3a2200;box-shadow:inset 0 -3px 0 #a0600a,0 0 14px #ffc83d88}
+@keyframes gx-tileflip{0%{transform:perspective(300px) rotateX(90deg)}100%{transform:none}}
+.dgslot{position:relative;padding:14px 14px 18px;border-radius:22px;background:linear-gradient(180deg,#8a5a34,#5b3519);box-shadow:inset 0 2px 0 #ffffff33,inset 0 -6px 0 #0004,0 18px 40px #000a,0 0 40px #7c4dff33}
+.dgslot::before{content:"";position:absolute;left:50%;top:-6px;width:96px;height:17px;margin-left:-48px;border-radius:8px 8px 12px 12px;background:linear-gradient(180deg,#e8e4f2,#9b95b0);box-shadow:0 3px 0 #5d5870,0 6px 10px #0007;z-index:2}
+.dgslot #dgc{border:0;border-radius:6px;box-shadow:inset 0 0 0 1px #0002,0 3px 10px #0006;background:#fff}
+.dgslot.mine #dgc{cursor:none}
+#gx-brush{position:fixed;display:none;border:2px solid #000;border-radius:50%;pointer-events:none;z-index:9998;box-shadow:0 0 0 1px #fff}
+.tools{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:18px;padding:8px 12px;box-shadow:0 6px 16px #0006}
+.tools .sw{width:32px;height:32px;border:0;border-radius:50% 50% 46% 54%/56% 48% 52% 44%;box-shadow:inset -3px -4px 0 #0003,inset 3px 3px 0 #ffffff55,0 3px 6px #0007;transition:transform .12s}
+.tools .sw:hover{transform:translateY(-3px) scale(1.08)}
+.tools .sw.on{transform:translateY(-4px) scale(1.15);box-shadow:inset -3px -4px 0 #0003,inset 3px 3px 0 #ffffff55,0 0 0 3px #fff,0 0 16px #fff9}
+.tools .sz{background:#ffffff14}.tools .sz.on{background:#ffffff33;box-shadow:0 0 0 2px #ffd84d}
+.dgchat .msgs p.ok{background:#3ddc8424;border-radius:10px;padding:4px 8px}
+.dgchat .msgs p.ok.fresh{animation:gx-right .6s cubic-bezier(.2,.9,.3,1.4)}
+.dghead .clock{transition:color .2s}
+.dg .actions .btn.primary{padding:14px 22px;font-size:17px;border-radius:16px;box-shadow:0 6px 0 #4a1d8f,0 12px 22px #0008;text-transform:capitalize}
+.dg .actions .btn.primary:hover{transform:translateY(-3px) rotate(-1deg)}
+
+/* ---- share button ---- */
+.btn.gx-share{background:linear-gradient(135deg,#5865f2,#8a5cff);color:#fff;box-shadow:0 5px 0 #2f3699,0 10px 20px #0007}
+.btn.gx-share:hover{filter:brightness(1.1);transform:translateY(-2px)}
+.gx-sharetoast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;background:#1b1140f5;border:1px solid #ffffff2a;color:#fff;font-weight:800;padding:10px 18px;border-radius:99px;box-shadow:0 10px 30px #000a;animation:gx-pop2 .35s ease-out}
 `;
 const h = (t: string) => new Bun.CryptoHasher("sha256").update(t).digest("hex").slice(0, 16);
 Bun.serve({

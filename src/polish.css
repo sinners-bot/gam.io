@@ -158,3 +158,31 @@ body.gx-calm .nw .mk,body.gx-calm .nw .mk svg *,body.gx-calm .tumble,body.gx-cal
 /* ---- Word Hunt tiles ---- */
 .wt{transition:transform .1s}.wt:active{transform:translateY(3px);box-shadow:0 2px 0 #b09060}
 @media (max-width:640px){.t4,.pktable,.ctable,.ldtable{width:calc(100% - 28px)!important;margin-left:auto!important;margin-right:auto!important;box-shadow:inset 0 0 0 4px #ffffff0d,inset 0 0 50px #000b,0 0 0 6px #3a2212,0 0 0 8px #b2875a,0 16px 30px #000b!important}}
+
+/* ---- Draw & Guess ---- */
+.dtiles{display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:center;vertical-align:middle}
+.dt{font-style:normal;width:26px;height:32px;border-radius:7px;background:#ffffff12;box-shadow:inset 0 -3px 0 #0004,0 0 0 1px #ffffff22;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;color:#fff}
+.dt.sp{width:12px;background:none;box-shadow:none}
+.dt.on{background:linear-gradient(180deg,#8f7cff,#5b45d6);box-shadow:inset 0 -3px 0 #0005,0 2px 6px #0006;animation:gx-tileflip .45s var(--d) both}
+.dt.gold{background:linear-gradient(180deg,#ffe27a,#f0a72c);color:#3a2200;box-shadow:inset 0 -3px 0 #a0600a,0 0 14px #ffc83d88}
+@keyframes gx-tileflip{0%{transform:perspective(300px) rotateX(90deg)}100%{transform:none}}
+.dgslot{position:relative;padding:14px 14px 18px;border-radius:22px;background:linear-gradient(180deg,#8a5a34,#5b3519);box-shadow:inset 0 2px 0 #ffffff33,inset 0 -6px 0 #0004,0 18px 40px #000a,0 0 40px #7c4dff33}
+.dgslot::before{content:"";position:absolute;left:50%;top:-6px;width:96px;height:17px;margin-left:-48px;border-radius:8px 8px 12px 12px;background:linear-gradient(180deg,#e8e4f2,#9b95b0);box-shadow:0 3px 0 #5d5870,0 6px 10px #0007;z-index:2}
+.dgslot #dgc{border:0;border-radius:6px;box-shadow:inset 0 0 0 1px #0002,0 3px 10px #0006;background:#fff}
+.dgslot.mine #dgc{cursor:none}
+#gx-brush{position:fixed;display:none;border:2px solid #000;border-radius:50%;pointer-events:none;z-index:9998;box-shadow:0 0 0 1px #fff}
+.tools{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:18px;padding:8px 12px;box-shadow:0 6px 16px #0006}
+.tools .sw{width:32px;height:32px;border:0;border-radius:50% 50% 46% 54%/56% 48% 52% 44%;box-shadow:inset -3px -4px 0 #0003,inset 3px 3px 0 #ffffff55,0 3px 6px #0007;transition:transform .12s}
+.tools .sw:hover{transform:translateY(-3px) scale(1.08)}
+.tools .sw.on{transform:translateY(-4px) scale(1.15);box-shadow:inset -3px -4px 0 #0003,inset 3px 3px 0 #ffffff55,0 0 0 3px #fff,0 0 16px #fff9}
+.tools .sz{background:#ffffff14}.tools .sz.on{background:#ffffff33;box-shadow:0 0 0 2px #ffd84d}
+.dgchat .msgs p.ok{background:#3ddc8424;border-radius:10px;padding:4px 8px}
+.dgchat .msgs p.ok.fresh{animation:gx-right .6s cubic-bezier(.2,.9,.3,1.4)}
+.dghead .clock{transition:color .2s}
+.dg .actions .btn.primary{padding:14px 22px;font-size:17px;border-radius:16px;box-shadow:0 6px 0 #4a1d8f,0 12px 22px #0008;text-transform:capitalize}
+.dg .actions .btn.primary:hover{transform:translateY(-3px) rotate(-1deg)}
+
+/* ---- share button ---- */
+.btn.gx-share{background:linear-gradient(135deg,#5865f2,#8a5cff);color:#fff;box-shadow:0 5px 0 #2f3699,0 10px 20px #0007}
+.btn.gx-share:hover{filter:brightness(1.1);transform:translateY(-2px)}
+.gx-sharetoast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;background:#1b1140f5;border:1px solid #ffffff2a;color:#fff;font-weight:800;padding:10px 18px;border-radius:99px;box-shadow:0 10px 30px #000a;animation:gx-pop2 .35s ease-out}

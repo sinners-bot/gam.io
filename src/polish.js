@@ -37,8 +37,31 @@
     if (!g || !g.type) return h;
     if (g.type === "chess") h = h.replace(RX_PC, function (_, s, sym) { return '<span class="pc ' + s + '">' + piece(sym, s) + "</span>"; }).replace(RX_KC, function (_, s) { return '<i class="kc ' + s + '">' + piece("♚", s) + "</i>"; });
     if (g.type === "ttt" || g.type === "uttt") h = h.replace(/<b class="mk x">✕<\/b>/g, MX).replace(/<b class="mk o">◯<\/b>/g, MO);
+    if (g.type === "draw" && g.state) h = h.replace(/<b class="?word( mask)?"?>[^<]*<\/b>( <small>\(\d+\)<\/small>)?/, function () { return tiles(g.state); });
     return h;
   };
+
+  // ===== Draw & Guess: the word as letter tiles =====
+  function tiles(st) {
+    var w = st.word ? st.word.toUpperCase() : (st.mask || "").replace(/ /g, "\u00a0"), out = "", k = 0;
+    if (st.word) w = w.replace(/ /g, "\u00a0");
+    for (var i = 0; i < w.length; i++) {
+      var ch = w[i];
+      if (ch === "\u00a0") { out += '<i class="dt sp"></i>'; continue; }
+      var open = st.word || ch !== "_";
+      out += '<i class="dt' + (open ? " on" : "") + (st.word ? " gold" : "") + '" style="--d:' + (k++ * 45) + 'ms">' + (open ? (ch === "_" ? "" : ch) : "") + "</i>";
+    }
+    return '<span class="dtiles">' + out + "</span>";
+  }
+  // a brush-sized cursor over the drawing canvas
+  var brush = document.createElement("div"); brush.id = "gx-brush"; document.documentElement.appendChild(brush);
+  document.addEventListener("pointermove", function (e) {
+    var cvs = e.target && e.target.id === "dgc" ? e.target : null, slot = cvs && cvs.closest(".dgslot.mine");
+    if (!slot || e.pointerType === "touch") { brush.style.display = "none"; return; }
+    var szb = app.querySelector(".tools .sz.on"), swb = app.querySelector(".tools .sw.on");
+    var w = szb ? +szb.getAttribute("data-w") : 8, col = swb ? swb.getAttribute("data-c") : "#000", r = cvs.getBoundingClientRect(), d = Math.max(4, w * r.width / 1000);
+    brush.style.cssText = "display:block;width:" + d + "px;height:" + d + "px;left:" + (e.clientX - d / 2) + "px;top:" + (e.clientY - d / 2) + "px;border-color:" + (col === "#ffffff" ? "#999" : col);
+  });
 
   // ===== effects canvas: sparks and confetti =====
   var cv = null, ctx = null, parts = [], raf = 0;
@@ -83,6 +106,7 @@
     kick();
   }
   window.__gxFx = { burst: burst, confetti: confetti };
+  window.__gxRender = function () { render(); };
 
   // ===== after every render: animate only what actually changed =====
   var prev = {}, lastGid = null, lastPhase = null;
@@ -107,6 +131,8 @@
       for (var i = 0; i < els.length; i++) { now.push(sig(els[i], w.kind)); if (old && old.length === els.length && old[i] !== now[i] && now[i]) w.fx(els[i]); }
       prev[w.sel] = now;
     });
+    // Draw & Guess: someone guessed it
+    var oks = app.querySelectorAll("#dg-msgs p.ok"); if (prev.__ok != null && oks.length > prev.__ok) { var lastOk = oks[oks.length - 1]; lastOk.classList.add("fresh"); burst(lastOk, "#3ddc84", 18); var tl = app.querySelector(".dtiles"); if (tl) burst(tl, "#ffd84d", 10); } prev.__ok = oks.length;
     // pieces that just landed
     var d = app.querySelector(".c4 .disc[data-new]"); if (d && d.__fx !== 1) { d.__fx = 1; var col = getComputedStyle(d).getPropertyValue("--pc"); setTimeout(function () { burst(d, col.trim() || "#ffd84d", 16); }, 320); }
     var rd = app.querySelector(".rv .rd.new"); if (rd && rd.__fx !== 1) { rd.__fx = 1; burst(rd, rd.classList.contains("p1") ? "#b9b2d8" : "#ffffff", 12); }
