@@ -18,8 +18,8 @@ Discord client ──► game-night (server.tsx)
                      ├─ serves the page, /client.js (all UI packs concatenated) and the Discord SDK bundle
                      ├─ OAuth token exchange (/api/token), WebSocket rooms (/ws), one room per Activity instance
                      ├─ game logic + bots, idle-turn timer, stats in Postgres
-                     ├─ fetches UI from ASSETS_URLS  ──► game-night-ui, -party, -cards, -extras, -bluff, -skin, -gamio  (/client.js, /style.css)
-                     └─ loads plugins from PLUGIN_URLS ─► game-night-party, -cards, -extras, -bluff  (/games.ts)
+                     ├─ fetches UI from ASSETS_URLS  ──► game-night-ui, -party, -cards, -extras, -bluff, -more, -skin, -gamio  (/client.js, /style.css)
+                     └─ loads plugins from PLUGIN_URLS ─► game-night-party, -cards, -extras, -bluff, -more  (/games.ts)
 game-night-legal (legal.tsx) ─ /terms and /privacy for Discord verification
 ```
 
@@ -66,6 +66,7 @@ There is one Railway Function per bundle. Paste the contents of the `dist/` file
 | `cards.tsx` | game-night-cards | game-night-cards-production.up.railway.app |
 | `extras.tsx` | game-night-extras | game-night-extras-production.up.railway.app |
 | `bluff.tsx` | game-night-bluff | game-night-bluff-production.up.railway.app |
+| `more.tsx` | game-night-more | Bomb Party, Typing Race, Minesweeper Battle, Snake Party, Backgammon, Gin Rummy |
 | `skin.tsx` | game-night-skin | game-night-skin-production.up.railway.app |
 | `gamio.tsx` | game-night-gamio | game-night-gamio-production.up.railway.app |
 | `legal.tsx` | game-night-legal | game-night-legal-production.up.railway.app |
@@ -79,8 +80,8 @@ There is one Railway Function per bundle. Paste the contents of the `dist/` file
 | game-night | `DISCORD_CLIENT_ID` | `1573456130699428090` |
 | game-night | `DISCORD_CLIENT_SECRET` | from the Discord Developer Portal. **Never commit it.** |
 | game-night | `DATABASE_URL` | reference to the Postgres service |
-| game-night | `ASSETS_URLS` | comma-separated UI service URLs, in load order: ui, party, cards, extras, bluff, skin, gamio (skin then gamio last) |
-| game-night | `PLUGIN_URLS` | comma-separated plugin URLs: party, cards, extras, bluff |
+| game-night | `ASSETS_URLS` | comma-separated UI service URLs, in load order: ui, party, cards, extras, bluff, more, skin, gamio (skin then gamio last) |
+| game-night | `PLUGIN_URLS` | comma-separated plugin URLs: party, cards, extras, bluff, more |
 | game-night | `AFK_SECONDS` | optional, default 60 |
 | game-night-legal | `OPERATOR_NAME`, `CONTACT_EMAIL`, `GOVERNING_COUNTRY` | shown on the Terms and Privacy pages |
 

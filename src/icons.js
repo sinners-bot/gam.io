@@ -165,6 +165,39 @@
       for (var i = 0; i < 9; i++) { var x = 18 + (i % 3) * 30, y = 22 + Math.floor(i / 3) * 30, on = path.indexOf(i) >= 0; t += '<rect x="' + x + '" y="' + (y + 3) + '" width="26" height="26" rx="6" fill="#000" opacity=".25"/><rect x="' + x + '" y="' + y + '" width="26" height="26" rx="6" fill="' + (on ? "#ffd84d" : "#f6ecd6") + '"/><text x="' + (x + 13) + '" y="' + (y + 19) + '" text-anchor="middle" font-size="16" font-weight="900" fill="' + (on ? "#7a3d00" : "#5b4a8f") + '" font-family="system-ui">' + L3[i] + "</text>"; }
       return svg("", t + '<path d="M100 92l10 4-6 3-2 6Z" fill="#ff4d8d"/>');
     },
+    bomb: function () {
+      return svg(R("bm1", "#6b6780", "#0e0c16") + L("bm2", "#ffd84d", "#ff7a2f"), SH + '<circle cx="56" cy="70" r="34" fill="url(#bm1)"/><rect x="66" y="26" width="18" height="16" rx="4" fill="#3b3650" transform="rotate(35 75 34)"/><path d="M82 26q10-16 22-10" fill="none" stroke="#c9a46a" stroke-width="4" stroke-linecap="round"/>' +
+        '<g><circle cx="104" cy="16" r="7" fill="url(#bm2)"/><path d="M104 3v6M104 23v6M91 16h6M111 16h6M95 7l4 4M113 25l-4-4M113 7l-4 4M95 25l4-4" stroke="#ffd84d" stroke-width="2.5" stroke-linecap="round"/></g>' + GL(42, 54, 10, 6, -30) +
+        '<rect x="30" y="62" width="52" height="22" rx="8" fill="#fff" transform="rotate(-6 56 73)"/><text x="56" y="79" text-anchor="middle" font-size="16" font-weight="900" fill="#ff4d6d" font-family="system-ui" transform="rotate(-6 56 73)">ING</text>');
+    },
+    typing: function () {
+      var k = "", rows = [[0, 9], [6, 9], [14, 8]];
+      rows.forEach(function (r, ri) { for (var i = 0; i < r[1]; i++) k += '<rect x="' + (16 + r[0] + i * 10) + '" y="' + (58 + ri * 12) + '" width="8" height="9" rx="2" fill="' + ((ri * 9 + i) % 7 === 3 ? "#ffd84d" : "#e8e1ff") + '"/>'; });
+      return svg(L("ty1", "#4a3aa8", "#1d1452"), SH + '<rect x="10" y="50" width="100" height="50" rx="10" fill="url(#ty1)"/><rect x="10" y="50" width="100" height="8" rx="4" fill="#fff" opacity=".15"/>' + k + '<rect x="34" y="90" width="52" height="7" rx="3" fill="#e8e1ff"/>' +
+        '<g stroke="#4dd4ff" stroke-width="4" stroke-linecap="round"><path d="M18 24h30M10 34h22M24 42h16"/></g><path d="M62 16l30 0-4 10h-30z" fill="#ff4d8d"/><text x="77" y="25" text-anchor="middle" font-size="9" font-weight="900" fill="#fff" font-family="system-ui">WPM</text>');
+    },
+    mines: function () {
+      var g = "";
+      for (var i = 0; i < 16; i++) { var x = 14 + (i % 4) * 24, y = 22 + Math.floor(i / 4) * 22, open = [1, 2, 5, 6, 9, 13].indexOf(i) >= 0; g += '<rect x="' + x + '" y="' + y + '" width="22" height="20" rx="4" fill="' + (open ? "#1d1452" : "#7c6bdb") + '"/>' + (open ? '<text x="' + (x + 11) + '" y="' + (y + 15) + '" text-anchor="middle" font-size="12" font-weight="900" fill="' + ["#4dd4ff", "#3ddc84", "#ff6b81"][i % 3] + '" font-family="system-ui">' + (1 + (i % 3)) + "</text>" : ""); }
+      return svg(R("mn1", "#5d5878", "#0d0b16"), SH + g + '<g transform="translate(78 74)"><path d="M0-24V24M-24 0H24M-17-17 17 17M-17 17 17-17" stroke="#2b2840" stroke-width="5" stroke-linecap="round"/><circle r="16" fill="url(#mn1)"/><circle cx="-5" cy="-5" r="4" fill="#fff" opacity=".6"/></g><path d="M30 28v26" stroke="#3b3650" stroke-width="3"/><path d="M31 28l16 6-16 6z" fill="#ff4d6d"/>');
+    },
+    snake: function () {
+      return svg(L("snk", "#6dff9a", "#1fb86a") + R("sna", "#ff8aa0", "#d81e4a"), SH + '<path d="M24 92C14 92 14 74 26 74H84C98 74 98 54 84 54H40C26 54 26 34 40 34H70" fill="none" stroke="url(#snk)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<circle cx="74" cy="34" r="12" fill="#3ddc84"/><circle cx="78" cy="30" r="3.5" fill="#fff"/><circle cx="79" cy="30" r="1.8" fill="#111"/><path d="M86 36l8 2-8 3" fill="none" stroke="#ff4d6d" stroke-width="2.5" stroke-linecap="round"/>' +
+        '<circle cx="96" cy="92" r="12" fill="url(#sna)"/><path d="M96 80c0-6 4-8 8-8" stroke="#3ddc84" stroke-width="3" fill="none"/><ellipse cx="91" cy="88" rx="3" ry="4" fill="#fff" opacity=".4"/>');
+    },
+    backgammon: function () {
+      var t = ""; for (var i = 0; i < 6; i++) { t += '<path d="M' + (16 + i * 15) + ' 26l7.5 30 7.5-30z" fill="' + (i % 2 ? "#b0422f" : "#e8c890") + '"/><path d="M' + (16 + i * 15) + ' 98l7.5-30 7.5 30z" fill="' + (i % 2 ? "#e8c890" : "#b0422f") + '"/>'; }
+      return svg(R("bgw", "#ffffff", "#bfb6e0") + R("bgb", "#7a6bb8", "#120d2e"), SH + '<rect x="10" y="20" width="100" height="84" rx="10" fill="#5c3a20"/><rect x="14" y="24" width="92" height="76" rx="6" fill="#1f5a3a"/>' + t +
+        '<circle cx="31" cy="90" r="7" fill="url(#bgw)"/><circle cx="31" cy="78" r="7" fill="url(#bgw)"/><circle cx="76" cy="34" r="7" fill="url(#bgb)"/><circle cx="76" cy="46" r="7" fill="url(#bgb)"/>' +
+        '<g transform="rotate(-12 58 62)"><rect x="46" y="50" width="22" height="22" rx="5" fill="#fff"/><circle cx="52" cy="56" r="2.4" fill="#2b1d63"/><circle cx="62" cy="66" r="2.4" fill="#2b1d63"/><circle cx="57" cy="61" r="2.4" fill="#2b1d63"/></g>');
+    },
+    gin: function () {
+      return svg("", SH + card(14, 36, 36, 54, -18, "#fff", '<text x="22" y="52" font-size="11" font-weight="900" fill="#e8335a" font-family="system-ui">7</text>' + HEART(32, 70, 0.6, "#e8335a")) +
+        card(34, 30, 36, 54, -6, "#fff", '<text x="42" y="46" font-size="11" font-weight="900" fill="#e8335a" font-family="system-ui">8</text>' + HEART(52, 64, 0.6, "#e8335a")) +
+        card(54, 28, 36, 54, 6, "#fff", '<text x="62" y="44" font-size="11" font-weight="900" fill="#e8335a" font-family="system-ui">9</text>' + HEART(72, 62, 0.6, "#e8335a")) +
+        '<rect x="52" y="88" width="56" height="22" rx="11" fill="#3ddc84"/><text x="80" y="104" text-anchor="middle" font-size="14" font-weight="900" fill="#06301a" font-family="system-ui">GIN!</text>');
+    },
   };
   // each logo sits on its own colour tile: [top colour, bottom colour, glow]
   var TILE = {
@@ -175,6 +208,8 @@
     cheat: ["#6b4a0f", "#2a1a06", "#ffd84d"], pool: ["#0f5c3d", "#062218", "#3ddc84"], ludo: ["#3a1d8f", "#160b3d", "#ffbf1a"], spymaster: ["#5a1d2a", "#1d0b1f", "#ff4d6d"],
     spy: ["#1d3a6b", "#0b1530", "#4dd4ff"], mafia: ["#3a0f2a", "#120614", "#ff4d6d"], draw: ["#8f4a1d", "#2e1a0b", "#ffd84d"], trivia: ["#4a2a8f", "#1a0f3d", "#ffd84d"],
     wordhunt: ["#6b5a1d", "#2a200b", "#ffd84d"],
+    bomb: ["#8f2a1d", "#2a0b0b", "#ff9f43"], typing: ["#1d4a8f", "#0b1a3d", "#4dd4ff"], mines: ["#3a2a8f", "#120b3d", "#ff4d6d"],
+    snake: ["#1d6b3a", "#0b2a16", "#6dff9a"], backgammon: ["#6b3a1d", "#2a140b", "#e8c890"], gin: ["#1d6b5a", "#0b2a24", "#3ddc84"],
   };
   var cache = {};
   function logo(id) { if (!IC[id]) return null; if (!cache[id]) cache[id] = IC[id](); return cache[id]; }

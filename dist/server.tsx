@@ -949,7 +949,7 @@ function endGame(room: Room, res: Res) {
 // Idle-turn timer: if a human doesn't act within AFK_SECONDS, a medium bot plays that one move for them.
 const AFK_MS = Number(Bun.env.AFK_SECONDS || 60) * 1000;
 // Seconds per turn; when it runs out a medium bot makes that one move. Games not listed use AFK_SECONDS.
-const TURN_SECS: Record<string, number> = { ttt: 15, connect4: 20, uttt: 25, dots: 20, reversi: 30, checkers: 40, chess: 60, mancala: 25, dice: 40, battleship: 25, crazy8: 25, clash: 20, hearts: 30, spades: 30, poker: 30, liars: 30, cheat: 30, ludo: 20, pool: 45 };
+const TURN_SECS: Record<string, number> = { backgammon: 45, gin: 30, ttt: 15, connect4: 20, uttt: 25, dots: 20, reversi: 30, checkers: 40, chess: 60, mancala: 25, dice: 40, battleship: 25, crazy8: 25, clash: 20, hearts: 30, spades: 30, poker: 30, liars: 30, cheat: 30, ludo: 20, pool: 45 };
 const TURN_MULT: Record<string, number> = { normal: 1, fast: 0.6, relaxed: 2, off: 0 };
 function turnMs(g: Game) { const k = TURN_MULT[g.opts?.turn ?? "normal"] ?? 1; if (g.type === "battleship" && g.state?.phase === "setup") return k ? 60_000 : 0; return Math.round((TURN_SECS[g.type] || AFK_MS / 1000) * 1000 * k); }
 // lobby rules the host can set; the first value in each list is the default
@@ -959,11 +959,15 @@ const GAME_OPTS: Record<string, Record<string, any[]>> = {
   snake: { time: [90, 60, 120] }, mines: { size: ["medium", "small", "large"] }, gin: { target: [100, 50] }, backgammon: { points: [1, 3, 5] },
 };
 function optSchema(g: Game) { const o: Record<string, any[]> = { turn: ["normal", "fast", "relaxed", "off"], ...(GAME_OPTS[g.type] || {}) }; if (RANKED.has(g.type) && GAMES[g.type].max === 2) o.ranked = [false, true]; return o; }
+// options passed to a game when it starts: the lobby rules plus which seats are bots (real-time games run their bots themselves)
+const BOT_LV: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+function initOpts(g: Game) { const bots: Record<number, number> = {}; g.seats.forEach((id, i) => { if (isBot(id)) bots[i] = BOT_LV[id.split(":")[1]] ?? 1; }); return { ...defaultOpts(g), ...(g.opts || {}), bots }; }
 function defaultOpts(g: Game) { const o: any = {}; for (const [k, v] of Object.entries(optSchema(g))) o[k] = v[0]; return o; }
 function yourTurn(g: Game, seat: number) {
   if (seat < 0 || g.phase !== "playing" || !g.state) return false;
   const mod: any = GAMES[g.type], st = g.state;
   if (g.type === "battleship" && st.phase === "setup") return !st.ready[seat];
+  if (mod.isTurn) return !!mod.isTurn(st, seat);
   if (mod.turn(st) === seat) return true;
   return mod.pending ? mod.pending(st).includes(seat) : false;
 }
@@ -1048,7 +1052,7 @@ function tryMatch(type: string) {
   const g: Game = { id: ++gameSeq, type, phase: "lobby", hostId: players[0].id, seats: players.map((u) => u.id), state: null, winner: null, names: Object.fromEntries(players.map((u) => [u.id, u])) };
   room.game = g; room.vis = "call"; g.opts = { ...defaultOpts(g), ranked: RANKED.has(type) };
   while (g.seats.length < mod.min && !mod.noBots) { const bid = "bot:medium:" + ++botSeq; g.seats.push(bid); g.names[bid] = { id: bid, name: "Medium Bot" + (g.seats.length > 2 ? " " + (g.seats.length - 1) : ""), avatar: null, guest: true, bot: true, level: "medium" }; }
-  g.state = mod.init(g.seats.length, g.opts); g.phase = "playing"; g.winners = [];
+  g.state = mod.init(g.seats.length, initOpts(g)); g.phase = "playing"; g.winners = [];
   for (const u of players) sendTo(room, u.id, { t: "queue", game: type, n: 0, need, matched: true });
   broadcast(room); scheduleBots(room); scheduleTick(room); scheduleAfk(room);
 }
@@ -1211,7 +1215,7 @@ function cosmeticsFor(p: Prog) {
 }
 
 // ----- ranked play (Elo, monthly seasons) -----
-const RANKED = new Set(["chess", "checkers", "connect4", "reversi", "battleship", "uttt", "mancala", "backgammon", "dots"]);
+const RANKED = new Set(["chess", "checkers", "connect4", "reversi", "battleship", "uttt", "mancala", "backgammon", "gin", "dots"]);
 const season = () => new Date().toISOString().slice(0, 7);
 const memRatings = new Map<string, { rating: number; games: number; wins: number; name: string }>();
 const TIERS: [number, string][] = [[1550, "Diamond"], [1400, "Platinum"], [1250, "Gold"], [1100, "Silver"], [0, "Bronze"]];
@@ -1313,7 +1317,7 @@ function tourPlay(t: Tour, user: User, from: Room) {
   if (from.id !== id) { const mine = from.game; if (mine && mine.phase === "playing" && mine.seats.includes(user.id)) return "Finish your current game first"; leaveQueues(user.id); if (!homeRoom.has(user.id)) homeRoom.set(user.id, hubOf(from.id)); if (isTable(from.id)) leaveTable(from, user, false); moveUser(user, from.id, id); }
   room.game.names[user.id] = { ...room.game.names[user.id], ...user };
   const g = room.game;
-  if (g.phase === "lobby" && g.seats.every((s) => room.members.has(s))) { g.state = GAMES[g.type].init(2, g.opts || {}); g.phase = "playing"; g.winners = []; scheduleBots(room); scheduleTick(room); scheduleAfk(room); }
+  if (g.phase === "lobby" && g.seats.every((s) => room.members.has(s))) { g.state = GAMES[g.type].init(2, initOpts(g)); g.phase = "playing"; g.winners = []; scheduleBots(room); scheduleTick(room); scheduleAfk(room); }
   broadcast(room); return null;
 }
 async function tourResult(room: Room, winner: string | null) {
@@ -1321,7 +1325,7 @@ async function tourResult(room: Room, winner: string | null) {
   const t = tours.get(m[1]); if (!t || t.status !== "running") return;
   const match = t.rounds[+m[2]]?.[+m[3]]; if (!match || match.w) return;
   if (!winner) { // a draw: play again
-    setTimeout(() => { const g = room.game; if (g && g.phase === "over") { g.state = GAMES[g.type].init(2, g.opts || {}); g.phase = "playing"; g.winner = null; g.winners = []; for (const mm of room.members.values()) sendTo(room, mm.user.id, { t: "err", msg: "It's a draw, so the match is replayed" }); broadcast(room); scheduleBots(room); scheduleAfk(room); } }, 2500);
+    setTimeout(() => { const g = room.game; if (g && g.phase === "over") { g.state = GAMES[g.type].init(2, initOpts(g)); g.phase = "playing"; g.winner = null; g.winners = []; for (const mm of room.members.values()) sendTo(room, mm.user.id, { t: "err", msg: "It's a draw, so the match is replayed" }); broadcast(room); scheduleBots(room); scheduleTick(room); scheduleAfk(room); } }, 2500);
     return;
   }
   match.w = winner; tourAdvance(t);
@@ -1601,7 +1605,7 @@ function handle(room: Room, user: User, m: any): string | void {
       const mod = GAMES[g.type];
       if (m.t === "rematch") { g.seats = g.seats.filter((id) => isBot(id) || room.members.has(id)); g.seats.push(g.seats.shift()!); }
       if (g.seats.length < mod.min) return "Need at least " + mod.min + " players";
-      g.state = mod.init(g.seats.length, { ...defaultOpts(g), ...(g.opts || {}) }); g.phase = "playing"; g.winner = null; g.winners = []; return;
+      g.state = mod.init(g.seats.length, initOpts(g)); g.phase = "playing"; g.winner = null; g.winners = []; return;
     }
     case "opts": {
       if (!g || g.phase !== "lobby") return;
@@ -1710,6 +1714,18 @@ const server = Bun.serve({
         if (res.err) { ws.send(JSON.stringify({ t: "err", msg: res.err })); return; }
         if (st.strokes.length > n) { const ink = JSON.stringify({ t: "ink", gid: g.id, n: st.strokes.length, s: st.strokes[st.strokes.length - 1] }); for (const m of room.members.values()) if (m.user.id !== user.id) for (const s2 of m.sockets) s2.send(ink); }
         return;
+      }
+      // real-time games: typing, steering and live progress skip the full re-send to everyone
+      if (msg.t === "move" && room.game && room.game.phase === "playing" && room.game.state) {
+        const g = room.game, mod: any = GAMES[g.type], kind = mod.live ? mod.live(msg.action) : "";
+        if (kind) {
+          const seat = g.seats.indexOf(user.id); if (seat < 0) return;
+          const res = mod.move(g.state, seat, msg);
+          if (res.err) { ws.send(JSON.stringify({ t: "err", msg: res.err })); return; }
+          if (res.done) { endGame(room, res); return; }
+          if (kind === "relay") { const live = JSON.stringify({ t: "live", gid: g.id, seat, m: msg.action === "prog" ? { ...msg, n: g.state.prog ? g.state.prog[seat] : msg.n } : msg }); for (const mm of room.members.values()) if (mm.user.id !== user.id) for (const s2 of mm.sockets) s2.send(live); }
+          return;
+        }
       }
       const err = handle(room, user, msg);
       if (err === "__done") return;
