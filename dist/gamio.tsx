@@ -143,7 +143,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   }
   setInterval(tickTimer, 100);
   function turnFx(g) {
-    var mine = !!(g && gameShown() && g.yourTurn);
+    var mine = !!(g && gameShown() && g.yourTurn && g.phase === "playing");
     document.body.classList.toggle("gx-myturn", mine);
     if (mine && !wasMine && !window.__gxCalm) {
       var f = document.createElement("div"); f.className = "gx-yt"; f.innerHTML = "<b>YOUR TURN</b>";
@@ -462,7 +462,21 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   // ===== small SVG helpers =====
   function L(id, a, b, x2, y2) { return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (x2 == null ? 0 : x2) + '" y2="' + (y2 == null ? 1 : y2) + '"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient>'; }
   function R(id, a, b) { return '<radialGradient id="' + id + '" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></radialGradient>'; }
-  function svg(defs, body) { return '<svg class="gx-ic" viewBox="0 0 120 120" aria-hidden="true"><defs>' + defs + "</defs>" + body + "</svg>"; }
+  // every logo gets the same finish: a soft bevel lit from the top left, a crisp rim and a contact shadow
+  var FIN = '<filter id="gxFin" x="-15%" y="-15%" width="130%" height="135%" color-interpolation-filters="sRGB">' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="b"/>' +
+    '<feSpecularLighting in="b" surfaceScale="2.6" specularConstant=".85" specularExponent="22" lighting-color="#ffffff" result="sp"><fePointLight x="24" y="-30" z="70"/></feSpecularLighting>' +
+    '<feComposite in="sp" in2="SourceAlpha" operator="in" result="sp2"/>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="2.2" result="ib"/><feOffset in="ib" dx="0" dy="-2.2" result="io"/><feComposite in="SourceAlpha" in2="io" operator="out" result="edge"/>' +
+    '<feFlood flood-color="#000" flood-opacity=".28"/><feComposite in2="edge" operator="in" result="shade"/>' +
+    '<feComposite in="SourceGraphic" in2="sp2" operator="arithmetic" k2="1" k3=".5" result="lit"/>' +
+    '<feMerge result="m"><feMergeNode in="lit"/><feMergeNode in="shade"/></feMerge>' +
+    '<feComposite in="m" in2="SourceAlpha" operator="in" result="clip"/>' +
+    '<feDropShadow in="clip" dx="0" dy="2.5" stdDeviation="1.8" flood-color="#08051a" flood-opacity=".55"/></filter>';
+  function svg(defs, body) {
+    var sh = ""; if (body.indexOf(SH) === 0) { sh = '<ellipse cx="60" cy="110" rx="38" ry="6" fill="#000" opacity=".35" filter="blur(2px)"/>'; body = body.slice(SH.length); }
+    return '<svg class="gx-ic" viewBox="0 0 120 120" aria-hidden="true"><defs>' + defs + FIN + "</defs>" + sh + '<g filter="url(#gxFin)">' + body + "</g></svg>";
+  }
   var SH = '<ellipse cx="60" cy="109" rx="36" ry="5.5" fill="#000" opacity=".3"/>';
   var GL = function (x, y, rx, ry, rot) { return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + rx + '" ry="' + ry + '" fill="#fff" opacity=".35"' + (rot ? ' transform="rotate(' + rot + " " + x + " " + y + ')"' : "") + "/>"; };
   var PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
@@ -657,6 +671,64 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
         card(54, 28, 36, 54, 6, "#fff", '<text x="62" y="44" font-size="11" font-weight="900" fill="#e8335a" font-family="system-ui">9</text>' + HEART(72, 62, 0.6, "#e8335a")) +
         '<rect x="52" y="88" width="56" height="22" rx="11" fill="#3ddc84"/><text x="80" y="104" text-anchor="middle" font-size="14" font-weight="900" fill="#06301a" font-family="system-ui">GIN!</text>');
     },
+  };
+  // ===== redrawn logos: chunkier, more depth =====
+  function slab(x, y, w, h, r, top, side, d) { return '<rect x="' + x + '" y="' + (y + d) + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="' + side + '"/><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="' + top + '"/>'; }
+  function bigX(cx, cy, s, g) { return '<g transform="translate(' + cx + " " + cy + ") scale(" + s + ')"><path d="M-14-20 0-6 14-20 20-14 6 0 20 14 14 20 0 6-14 20-20 14-6 0-20-14Z" fill="#a3124a" transform="translate(0 3)"/><path d="M-14-20 0-6 14-20 20-14 6 0 20 14 14 20 0 6-14 20-20 14-6 0-20-14Z" fill="url(#' + g + ')"/></g>'; }
+  function bigO(cx, cy, s, g) { return '<g transform="translate(' + cx + " " + cy + ") scale(" + s + ')"><circle cy="3" r="15" fill="none" stroke="#0b6f8f" stroke-width="10"/><circle r="15" fill="none" stroke="url(#' + g + ')" stroke-width="10"/></g>'; }
+  IC.ttt = function () {
+    return svg(L("t1", "#4a3aa8", "#24185e") + L("tx", "#ff8ab5", "#ff2f74") + L("to", "#8af0ff", "#1fb8e6"),
+      SH + slab(14, 16, 92, 86, 18, "url(#t1)", "#140c3a", 7) +
+      '<g stroke="#8f7cff" stroke-width="5" stroke-linecap="round" opacity=".9"><path d="M45 24v70M75 24v70M22 47h76M22 71h76"/></g>' +
+      bigX(33, 35, 0.62, "tx") + bigO(87, 35, 0.6, "to") + bigX(60, 59, 0.62, "tx") + bigO(33, 83, 0.6, "to") + bigX(87, 83, 0.62, "tx") +
+      '<path d="M24 25 96 93" stroke="#ffd84d" stroke-width="5" stroke-linecap="round" opacity=".95"/>');
+  };
+  IC.uttt = function () {
+    var g = "", k, i;
+    for (k = 0; k < 9; k++) {
+      var bx = 16 + (k % 3) * 30, by = 14 + Math.floor(k / 3) * 30;
+      g += slab(bx, by, 26, 26, 6, k === 4 ? "url(#u2)" : "url(#u1)", "#0d0a2e", 3);
+      g += '<g stroke="#ffffff38" stroke-width="1.4"><path d="M' + (bx + 9) + " " + (by + 3) + "v20M" + (bx + 17) + " " + (by + 3) + "v20M" + (bx + 3) + " " + (by + 9) + "h20M" + (bx + 3) + " " + (by + 17) + 'h20"/></g>';
+      for (i = 0; i < 9; i++) if ((k * 7 + i * 3) % 5 === 0) { var cx = bx + 5 + (i % 3) * 8, cy = by + 5 + Math.floor(i / 3) * 8; g += (i + k) % 2 ? '<circle cx="' + cx + '" cy="' + cy + '" r="2.3" fill="none" stroke="#5ee0ff" stroke-width="1.6"/>' : '<path d="M' + (cx - 2) + " " + (cy - 2) + "l4 4m0-4-4 4" + '" stroke="#ff5c93" stroke-width="1.8" stroke-linecap="round"/>'; }
+    }
+    return svg(L("u1", "#3b2f8f", "#1d1652") + L("u2", "#ffe27a", "#f0a72c") + L("ux", "#ff8ab5", "#ff2f74"), SH + g + bigX(60, 57, 0.68, "ux"));
+  };
+  IC.dots = function () {
+    var d = "", x, y;
+    for (y = 0; y < 4; y++) for (x = 0; x < 4; x++) d += '<circle cx="' + (24 + x * 24) + '" cy="' + (20 + y * 24) + '" r="5.5" fill="url(#dd)"/>';
+    return svg(R("dd", "#ffffff", "#b9b0e8") + L("db1", "#ff7aa8", "#e8336d") + L("db2", "#7ae6ff", "#1fa8e6"),
+      SH + '<rect x="24" y="20" width="24" height="24" fill="url(#db1)"/><rect x="72" y="44" width="24" height="24" fill="url(#db2)"/><rect x="48" y="68" width="24" height="24" fill="url(#db1)"/>' +
+      '<text x="36" y="38" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">A</text><text x="84" y="62" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">B</text><text x="60" y="86" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">A</text>' +
+      '<g stroke-width="6" stroke-linecap="round" fill="none"><path d="M24 20H48V44H24Z M48 68H72V92H48Z" stroke="#ff4d8d"/><path d="M72 44H96V68H72Z M24 68V92 M72 20H96" stroke="#2ec8ff"/><path d="M48 44V68" stroke="#ffd84d" stroke-dasharray="3 7"/></g>' + d);
+  };
+  IC.typing = function () {
+    var k = "", r, i, rows = [[22, 9, 0], [26, 8, 1], [32, 7, 2]];
+    rows.forEach(function (rw) { for (i = 0; i < rw[1]; i++) { var x = rw[0] + i * 9.4, y = 58 + rw[2] * 11, hot = (rw[2] === 1 && i === 3) || (rw[2] === 0 && i === 6); k += '<rect x="' + x + '" y="' + (y + 2.2) + '" width="8" height="8.5" rx="2" fill="' + (hot ? "#c77a00" : "#9d93cf") + '"/><rect x="' + x + '" y="' + y + '" width="8" height="8.5" rx="2" fill="' + (hot ? "#ffd84d" : "#f4f1ff") + '"/>'; } });
+    return svg(L("kb", "#5b4ad0", "#2b1f7a") + L("bolt", "#fff3a6", "#ffb800"),
+      SH + '<g transform="rotate(-8 60 74)">' + slab(14, 50, 92, 48, 11, "url(#kb)", "#160f45", 7) + k + '<rect x="40" y="91" width="40" height="5" rx="2.5" fill="#f4f1ff"/></g>' +
+      '<path d="M74 6 50 42h14l-8 26 28-38H70l10-24Z" fill="#c77a00" transform="translate(1 3)"/><path d="M74 6 50 42h14l-8 26 28-38H70l10-24Z" fill="url(#bolt)"/>' +
+      '<g stroke="#7ae6ff" stroke-width="4" stroke-linecap="round"><path d="M14 22h22M8 32h24M16 42h14"/></g>');
+  };
+  IC.mines = function () {
+    var t = "", i;
+    for (i = 0; i < 9; i++) { var x = 14 + (i % 3) * 31, y = 40 + Math.floor(i / 3) * 22, open = [0, 1, 3].indexOf(i) >= 0; t += open ? '<rect x="' + x + '" y="' + y + '" width="28" height="19" rx="4" fill="#1a1446"/><text x="' + (x + 14) + '" y="' + (y + 15) + '" text-anchor="middle" font-size="14" font-weight="900" fill="' + ["#4dd4ff", "#3ddc84", "#ff6b81", "", ""][i % 3] + '" font-family="system-ui">' + (1 + (i % 3)) + "</text>" : slab(x, y, 28, 17, 4, "url(#mt)", "#3b2c9f", 3); }
+    var spikes = ""; for (i = 0; i < 8; i++) { var a = i * Math.PI / 4; spikes += '<path d="M' + (82 + Math.cos(a) * 12).toFixed(1) + " " + (36 + Math.sin(a) * 12).toFixed(1) + "L" + (82 + Math.cos(a) * 24).toFixed(1) + " " + (36 + Math.sin(a) * 24).toFixed(1) + '" stroke="#2b2840" stroke-width="6" stroke-linecap="round"/>'; }
+    return svg(L("mt", "#a89bff", "#6f5ce6") + R("mb", "#6e6a8a", "#0b0a14") + L("mf", "#ff6b81", "#e8203f"),
+      SH + t + spikes + '<circle cx="82" cy="36" r="17" fill="url(#mb)"/><circle cx="76" cy="30" r="5" fill="#fff" opacity=".7"/><circle cx="88" cy="42" r="3" fill="#ff3b5c"/>' +
+      '<path d="M26 12v34" stroke="#d9d2ff" stroke-width="4" stroke-linecap="round"/><path d="M28 12 50 20 28 29Z" fill="url(#mf)"/>');
+  };
+  IC.gin = function () {
+    function c(x, rot, n) { return card(x, 24, 40, 58, rot, "#fff", '<text x="' + (x + 6) + '" y="' + 40 + '" font-size="13" font-weight="900" fill="#e8335a" font-family="system-ui">' + n + "</text>" + HEART(x + 20, 58, 0.75, "#e8335a")); }
+    return svg(L("gr", "#5dffa8", "#13b866"), SH + c(12, -20, "7") + c(40, -4, "8") + c(66, 12, "9") +
+      '<g transform="rotate(-6 60 96)"><path d="M18 88h84l-6 9 6 9H18l6-9Z" fill="#0b7a45" transform="translate(0 3)"/><path d="M18 88h84l-6 9 6 9H18l6-9Z" fill="url(#gr)"/><text x="60" y="102" text-anchor="middle" font-size="15" font-weight="900" fill="#053d22" font-family="system-ui" letter-spacing="2">GIN!</text></g>');
+  };
+  IC.snake = function () {
+    return svg(L("sk1", "#8cffb4", "#16a35c") + R("sa1", "#ff9db0", "#d81e4a") + '<pattern id="skp" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="2.2" fill="#0b6b38" opacity=".45"/></pattern>',
+      SH + '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="#0b6b38" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 3)"/>' +
+      '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="url(#sk1)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="url(#skp)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<ellipse cx="72" cy="31" rx="15" ry="12" fill="#2ed47a"/><circle cx="74" cy="25" r="5" fill="#fff"/><circle cx="75.5" cy="25" r="2.6" fill="#111"/><path d="M86 33l9 1-7 4m7-4-6-4" fill="none" stroke="#ff4d6d" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<circle cx="98" cy="96" r="13" fill="url(#sa1)"/><path d="M98 83c0-6 4-8 9-8" stroke="#3ddc84" stroke-width="3.5" fill="none" stroke-linecap="round"/><ellipse cx="93" cy="91" rx="3.5" ry="5" fill="#fff" opacity=".45"/>');
   };
   // each logo sits on its own colour tile: [top colour, bottom colour, glow]
   var TILE = {
@@ -1179,6 +1251,135 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   apply();
   setTimeout(function () { translate(document.body); }, 0);
 })();
+
+// ---------- GAM.IO polish: drawn chess pieces, neon marks, dice tumbles, sparks, confetti (loads after the game packs) ----------
+(function () {
+  // ===== shared gradients for drawn pieces =====
+  try {
+    var defs = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    defs.setAttribute("width", "0"); defs.setAttribute("height", "0"); defs.setAttribute("aria-hidden", "true"); defs.style.position = "absolute";
+    defs.innerHTML = '<defs>' +
+      '<linearGradient id="gxPw" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset=".38" stop-color="#f6f2ff"/><stop offset="1" stop-color="#b8aee0"/></linearGradient>' +
+      '<linearGradient id="gxPb" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#77709c"/><stop offset=".35" stop-color="#2d2748"/><stop offset="1" stop-color="#0c0a18"/></linearGradient>' +
+      '<linearGradient id="gxPg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset="1" stop-color="#f0a72c"/></linearGradient>' +
+      "</defs>";
+    document.body.appendChild(defs);
+  } catch (e) {}
+
+  // ===== chess pieces (original drawings) =====
+  var BASE = "M22 95v-3c0-3 2-5 5-5h2l3-6h36l3 6h2c3 0 5 2 5 5v3Z";
+  var P = {
+    "♟": '<path d="M50 17a12 12 0 0 1 8 21h3a3 3 0 0 1 0 6h-5c2 12 7 23 12 37H32c5-14 10-25 12-37h-5a3 3 0 0 1 0-6h3a12 12 0 0 1 8-21Z"/>',
+    "♜": '<path d="M27 15h10v8h7v-8h12v8h7v-8h10v17l-7 5v35l5 9H29l5-9V37l-7-5Z"/><path class="ln" d="M34 37h32"/>',
+    "♝": '<path d="M50 7a5 5 0 0 1 3 9c9 5 15 14 15 24 0 8-5 13-10 16h4a3 3 0 0 1 0 6h-4c1 7 4 13 9 19H33c5-6 8-12 9-19h-4a3 3 0 0 1 0-6h4c-5-3-10-8-10-16 0-10 6-19 15-24a5 5 0 0 1 3-9Z"/><path class="ln" d="M56 27 46 43"/>',
+    "♞": '<path d="M29 81c0-15 6-23 15-29-7 1-12 5-17 3-5-2-6-7-3-11l15-17c3-4 4-8 4-13 5 2 8 6 9 9 15 3 26 18 26 38 0 7-2 13-3 20Z"/><path class="ln" d="M58 24c7 4 11 12 12 22"/><circle class="eye" cx="46" cy="32" r="3"/><circle class="eye" cx="29" cy="47" r="1.6"/>',
+    "♛": '<path d="M29 81 20 32 34 52 35 25 44 50 50 21 56 50 65 25 66 52 80 32 71 81Z"/><path class="ln" d="M31 70h38"/><circle class="gem" cx="20" cy="29" r="5"/><circle class="gem" cx="35" cy="22" r="5"/><circle class="gem" cx="50" cy="17" r="5.5"/><circle class="gem" cx="65" cy="22" r="5"/><circle class="gem" cx="80" cy="29" r="5"/>',
+    "♚": '<path d="M50 31c15 0 27 6 27 16 0 9-6 14-8 22l2 12H29l2-12c-2-8-8-13-8-22 0-10 12-16 27-16Z"/><path class="ln" d="M31 68h38M50 33v34"/><path class="gem" d="M46 5h8v7h7v8h-7v9h-8v-9h-7v-8h7Z"/>',
+  };
+  function piece(sym, side) {
+    return '<svg class="gxp ' + side + '" viewBox="0 0 100 100" aria-hidden="true"><g class="body">' + P[sym] + '<path d="' + BASE + '"/></g></svg>';
+  }
+  var RX_PC = /<span class="pc ([wb])">([♚♛♜♝♞♟])︎?<\/span>/g;
+  var RX_KC = /<i class="kc ([wb])">♚︎?<\/i>/g;
+  // ===== tic-tac-toe marks drawn as neon strokes =====
+  var MX = '<b class="mk x"><svg viewBox="0 0 40 40"><path d="M11 11 29 29M29 11 11 29"/></svg></b>';
+  var MO = '<b class="mk o"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="10.5"/></svg></b>';
+
+  var baseScreen = gameScreen;
+  gameScreen = function (g) {
+    var h = baseScreen.apply(this, arguments);
+    if (!g || !g.type) return h;
+    if (g.type === "chess") h = h.replace(RX_PC, function (_, s, sym) { return '<span class="pc ' + s + '">' + piece(sym, s) + "</span>"; }).replace(RX_KC, function (_, s) { return '<i class="kc ' + s + '">' + piece("♚", s) + "</i>"; });
+    if (g.type === "ttt" || g.type === "uttt") h = h.replace(/<b class="mk x">✕<\/b>/g, MX).replace(/<b class="mk o">◯<\/b>/g, MO);
+    return h;
+  };
+
+  // ===== effects canvas: sparks and confetti =====
+  var cv = null, ctx = null, parts = [], raf = 0;
+  function ensure() {
+    if (cv && cv.isConnected) return;
+    cv = document.createElement("canvas"); cv.id = "gx-fx"; document.documentElement.appendChild(cv); // outside the zoomed body, so screen pixels map 1:1 ctx = cv.getContext("2d"); size();
+  }
+  function size() { if (!cv) return; var d = Math.min(2, window.devicePixelRatio || 1); cv.width = innerWidth * d; cv.height = innerHeight * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  window.addEventListener("resize", size);
+  function loop() {
+    raf = 0; if (!ctx) return;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    var now = performance.now();
+    parts = parts.filter(function (p) { return now - p.t0 < p.life; });
+    parts.forEach(function (p) {
+      var t = (now - p.t0) / 1000, k = 1 - (now - p.t0) / p.life;
+      var x = p.x + p.vx * t, y = p.y + p.vy * t + 0.5 * p.g * t * t;
+      ctx.globalAlpha = Math.max(0, Math.min(1, k * 1.6));
+      ctx.fillStyle = p.c;
+      if (p.kind === "conf") { ctx.save(); ctx.translate(x, y); ctx.rotate(p.r + t * p.vr); ctx.scale(1, Math.cos(t * p.flip)); ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }
+      else { ctx.shadowColor = p.c; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(x, y, p.s * (0.4 + k * 0.6), 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+    });
+    ctx.globalAlpha = 1;
+    if (parts.length) raf = requestAnimationFrame(loop);
+  }
+  function kick() { if (!raf) raf = requestAnimationFrame(loop); }
+  function center(el) { var r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width }; }
+  function burst(el, color, n) {
+    if (window.__gxCalm || !el) return; ensure();
+    var c = center(el), t0 = performance.now(), cnt = n || 14;
+    for (var i = 0; i < cnt; i++) { var a = (i / cnt) * Math.PI * 2 + Math.random() * 0.4, sp = 90 + Math.random() * 140; parts.push({ kind: "spark", x: c.x, y: c.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 260, s: 2.2 + Math.random() * 2.5, c: color || "#ffd84d", t0: t0, life: 420 + Math.random() * 300 }); }
+    kick();
+  }
+  var CONF = ["#ffd84d", "#ff4d8d", "#4dd4ff", "#3ddc84", "#b05cff", "#ff9f43", "#ffffff"];
+  function confetti(big) {
+    if (window.__gxCalm) return; ensure();
+    var t0 = performance.now(), W = innerWidth, n = big ? 170 : 70;
+    for (var i = 0; i < n; i++) {
+      var left = i % 2 === 0, a = (left ? -60 : -120) * Math.PI / 180 + (Math.random() - 0.5) * 0.9, sp = 520 + Math.random() * 520;
+      parts.push({ kind: "conf", x: left ? -10 : W + 10, y: innerHeight * 0.75, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 900, s: 7 + Math.random() * 7, r: Math.random() * 6, vr: (Math.random() - 0.5) * 14, flip: 4 + Math.random() * 8, c: CONF[i % CONF.length], t0: t0 + Math.random() * 250, life: 2600 + Math.random() * 1200 });
+    }
+    kick();
+  }
+  window.__gxFx = { burst: burst, confetti: confetti };
+
+  // ===== after every render: animate only what actually changed =====
+  var prev = {}, lastGid = null, lastPhase = null;
+  function sig(el, kind) {
+    if (kind === "mark") { var m = el.querySelector(".mk"); return m ? m.className : ""; }
+    if (kind === "die") return el.querySelectorAll(".on").length + "";
+    return "";
+  }
+  var WATCH = [
+    { sel: ".ttt .tc", kind: "mark", fx: function (el) { el.classList.add("nw"); burst(el, el.querySelector(".mk.x") ? "#ff4d8d" : "#4dd4ff", 12); } },
+    { sel: ".uttt .uc", kind: "mark", fx: function (el) { el.classList.add("nw"); } },
+    { sel: ".dicebox .dface", kind: "die", fx: function (el) { if (!el.classList.contains("held")) el.classList.add("tumble"); } },
+    { sel: ".ldie", kind: "die", fx: function (el) { el.classList.add("tumble"); } },
+    { sel: ".bg-dice .bg-d", kind: "die", fx: function (el) { el.classList.add("tumble"); } },
+  ];
+  function afterRender() {
+    var g = S.game, gid = g ? g.id + ":" + g.type : null;
+    if (gid !== lastGid) { prev = {}; lastGid = gid; lastPhase = g ? g.phase : null; }
+    if (!g || g.phase === "lobby") { lastPhase = g ? g.phase : null; return; }
+    WATCH.forEach(function (w) {
+      var els = app.querySelectorAll(w.sel), old = prev[w.sel], now = [];
+      for (var i = 0; i < els.length; i++) { now.push(sig(els[i], w.kind)); if (old && old.length === els.length && old[i] !== now[i] && now[i]) w.fx(els[i]); }
+      prev[w.sel] = now;
+    });
+    // pieces that just landed
+    var d = app.querySelector(".c4 .disc[data-new]"); if (d && d.__fx !== 1) { d.__fx = 1; var col = getComputedStyle(d).getPropertyValue("--pc"); setTimeout(function () { burst(d, col.trim() || "#ffd84d", 16); }, 320); }
+    var rd = app.querySelector(".rv .rd.new"); if (rd && rd.__fx !== 1) { rd.__fx = 1; burst(rd, rd.classList.contains("p1") ? "#b9b2d8" : "#ffffff", 12); }
+    var bx = app.querySelectorAll(".dots rect.bx"); if (prev.__bx != null && bx.length > prev.__bx) burst(bx[bx.length - 1], bx[bx.length - 1].getAttribute("fill"), 22); prev.__bx = bx.length;
+    // the end of a game
+    if (g.phase === "over") document.querySelectorAll(".gx-yt").forEach(function (f) { f.remove(); });
+    if (g.phase === "over" && lastPhase && lastPhase !== "over") {
+      var ws = g.winners || (g.winner ? [g.winner] : []), won = ws.indexOf(S.you) >= 0;
+      if (won) confetti(true); else if (!ws.length) confetti(false);
+      var box = app.querySelector(".modal .box"); if (box) box.classList.add(won ? "gx-won" : ws.length ? "gx-lost" : "gx-draw");
+    } else if (g.phase === "over") { var b2 = app.querySelector(".modal .box"); if (b2) { var ws2 = g.winners || (g.winner ? [g.winner] : []); b2.classList.add(ws2.indexOf(S.you) >= 0 ? "gx-won" : ws2.length ? "gx-lost" : "gx-draw"); } }
+    lastPhase = g.phase;
+  }
+  var baseRender = render;
+  render = function () {
+    baseRender.apply(this, arguments);
+    try { afterRender(); } catch (e) { console.error("polish", e); }
+  };
+})();
 `;
 const CSS: string = String.raw`/* ================= GAM.IO pack (loads last) ================= */
 .brand-t span{margin-left:0}
@@ -1621,6 +1822,167 @@ body.gx-cb .c4 .disc[data-cb]::after{content:attr(data-cb);position:absolute;ins
 body.gx-cb .c4 .disc{position:relative}
 body.gx-cb .tok.c0::after,body.gx-cb .tok.c1::after,body.gx-cb .tok.c2::after,body.gx-cb .tok.c3::after{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 body.gx-cb .tok.c0::after{content:"▲"}body.gx-cb .tok.c1::after{content:"■"}body.gx-cb .tok.c2::after{content:"●"}body.gx-cb .tok.c3::after{content:"★"}
+
+/* ================= GAM.IO polish ================= */
+#gx-fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999}
+.btn:active,.lvb:active,button.ghost:active{transform:scale(.96)}
+
+/* ---- Chess: drawn pieces ---- */
+.chess:not(.checkers) .pc{width:88%;height:88%;display:flex;align-items:center;justify-content:center;font-size:0}
+.gxp{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 2px #0006) drop-shadow(0 1px 0 #0004)}
+.gxp .body>*{stroke-linejoin:round;stroke-linecap:round}
+.gxp.w .body>path{fill:url(#gxPw);stroke:#3b2313;stroke-width:3.2}
+.gxp.b .body>path{fill:url(#gxPb);stroke:#050310;stroke-width:3.2}
+.gxp .body>path.ln{fill:none;stroke-width:2.6}
+.gxp.w .body>path.ln{stroke:#a08970}.gxp.b .body>path.ln{stroke:#8a80b8}
+.gxp .gem{fill:url(#gxPg)!important;stroke:#7a4a0a!important;stroke-width:2.4!important}
+.gxp .eye{fill:#2a1a0e}.gxp.b .eye{fill:#cfc6ff}
+.chess.mine .sq:hover .gxp{filter:drop-shadow(0 9px 4px #0006) drop-shadow(0 1px 0 #0004)}
+.kc{display:inline-flex;width:20px;height:20px;vertical-align:middle;font-size:0}
+.kc .gxp{filter:drop-shadow(0 1px 1px #0008)}
+
+/* ---- Tic-Tac-Toe and Ultimate: glass slab, neon marks ---- */
+.mk svg{width:1em;height:1em;overflow:visible;display:block}
+.mk svg *{fill:none;stroke-linecap:round;stroke-width:6.5}
+.mk.x svg path{stroke:#ff4d8d;filter:drop-shadow(0 0 4px #ff4d8d) drop-shadow(0 3px 0 #9d0f45)}
+.mk.o svg circle{stroke:#38d6ff;filter:drop-shadow(0 0 4px #38d6ff) drop-shadow(0 3px 0 #0b6f8f)}
+.nw .mk svg path{stroke-dasharray:28;animation:gx-draw .32s ease-out both}
+.nw .mk svg path+path{animation-delay:.12s}
+.nw .mk.x svg path{stroke-dasharray:26 26;animation:gx-drawx .4s ease-out both}
+.nw .mk.o svg circle{stroke-dasharray:66;animation:gx-drawo .38s ease-out both}
+@keyframes gx-drawx{from{stroke-dashoffset:26}to{stroke-dashoffset:0}}
+@keyframes gx-drawo{from{stroke-dashoffset:66;transform:rotate(-90deg);transform-origin:center}to{stroke-dashoffset:0}}
+.nw .mk{animation:gx-thump .35s cubic-bezier(.2,.9,.3,1.5)}
+@keyframes gx-thump{0%{transform:scale(.6)}100%{transform:none}}
+.ttt{background:linear-gradient(180deg,#3a2c94,#22186a);box-shadow:0 10px 0 #120b3d,0 26px 46px #000b,0 0 0 2px #8f7cff66,0 0 60px #7c4dff44,inset 0 2px 0 #ffffff33;border-radius:28px;padding:14px}
+.ttt .tc{font-size:min(15vw,78px);border-color:#a594ff55!important}
+.ttt .tc.open:hover{background:radial-gradient(circle,#ffffff18,transparent 70%)}
+.ttt .tc.win{background:radial-gradient(circle,#ffd84d44,transparent 72%)!important;box-shadow:none!important}
+.ttt .tc.win .mk{animation:gx-winpulse 1s ease-in-out infinite}
+@keyframes gx-winpulse{50%{transform:scale(1.12);filter:brightness(1.3)}}
+.uttt{gap:12px}
+.uttt .ub{background:linear-gradient(180deg,#33278a,#1d1560);box-shadow:0 6px 0 #110a38,0 14px 24px #0009,inset 0 2px 0 #ffffff26;border:0;border-radius:16px}
+.uttt .ub.live{box-shadow:0 6px 0 #6b4a0a,0 0 0 3px #ffd84d,0 0 26px #ffc83d88,inset 0 2px 0 #ffffff26}
+.uttt .uc{background:#0d0930aa!important;box-shadow:inset 0 2px 4px #0008;font-size:min(4.5vw,24px)!important}
+.uttt .ub.done .uc{opacity:.18}
+.uttt .ubw{font-size:min(16vw,84px)}
+.uttt .ubw .mk svg *{stroke-width:5}
+
+/* ---- Connect 4: deeper frame, polished discs ---- */
+.c4 .disc{background:radial-gradient(circle at 50% 50%,transparent 0 44%,#00000026 45% 49%,#ffffff22 50% 52%,transparent 53%),radial-gradient(circle at 34% 26%,#ffffffd9,transparent 34%),radial-gradient(circle at 50% 60%,var(--pc),color-mix(in srgb,var(--pc) 62%,#000) 100%)!important}
+.c4 .disc[data-new]{animation:gx-drop .5s cubic-bezier(.45,0,.6,1) both}
+@keyframes gx-drop{0%{transform:translateY(-520%)}62%{transform:translateY(0)}76%{transform:translateY(-14%)}88%{transform:translateY(0)}94%{transform:translateY(-4%)}100%{transform:none}}
+.c4.mine .cell:hover{background:radial-gradient(circle at 50% 35%,#24244f,#1a1a48)}
+
+/* ---- Reversi: felt, bevelled discs, flip ---- */
+.rv{background:radial-gradient(ellipse at 50% 30%,#2a9a69,#13573b 75%),#145238}
+.rd{transform-style:preserve-3d}
+.rd.p1{background:radial-gradient(circle at 34% 28%,#8d86ab,#2a2540 45%,#07060e)!important;box-shadow:0 4px 0 #000,0 6px 10px #000a,inset 0 0 0 2px #ffffff14!important}
+.rd.p2{background:radial-gradient(circle at 34% 28%,#ffffff,#eeeaff 45%,#b5acdc)!important;box-shadow:0 4px 0 #8c82b6,0 6px 10px #0008,inset 0 0 0 2px #fff!important}
+.rd.new{animation:gx-flip .45s ease-out}
+@keyframes gx-flip{0%{transform:rotateY(90deg) scale(1.15)}60%{transform:rotateY(-12deg) scale(1.05)}100%{transform:none}}
+.rc.open::after{content:"";width:28%;height:28%;border-radius:50%;background:#ffffff55;box-shadow:0 0 10px #fff8;animation:gx-breathe 1.4s ease-in-out infinite}
+@keyframes gx-breathe{50%{transform:scale(1.35);opacity:.6}}
+
+/* ---- Checkers: ridged pieces ---- */
+.ckp{background:repeating-radial-gradient(circle at 50% 50%,transparent 0 22%,#0000001f 23% 25%,transparent 26% 30%),radial-gradient(circle at 34% 28%,#ffffffb0,transparent 38%),radial-gradient(circle,var(--pc),color-mix(in srgb,var(--pc) 58%,#000))!important;box-shadow:0 5px 0 color-mix(in srgb,var(--pc) 45%,#000),0 8px 12px #000a,inset 0 0 0 3px #ffffff30!important}
+
+/* ---- Dots & Boxes ---- */
+.dots{background:radial-gradient(circle at 50% 0%,#3a2c94,#160f45 80%);box-shadow:0 10px 0 #0d0830,0 26px 46px #000b,0 0 0 2px #8f7cff55,0 0 60px #7c4dff44}
+.dots circle{fill:#fff;filter:drop-shadow(0 0 5px #b05cff) drop-shadow(0 2px 0 #6b4ad0)}
+.dots .ln.drawn{stroke-width:9;filter:drop-shadow(0 0 6px currentColor)}
+.dots .ln.last{animation:gx-lnflash .8s ease-out}
+@keyframes gx-lnflash{0%{stroke:#fff;stroke-width:14}}
+.dots .bx{opacity:.62!important;animation:gx-boxin .4s cubic-bezier(.2,.9,.3,1.4)}
+.dots text{fill:#fff;font-weight:900;font-size:30px;paint-order:stroke;stroke:#0005;stroke-width:4px}
+@keyframes gx-boxin{from{transform:scale(.2);opacity:0}}
+.dots.mine .hitln:hover+circle,.dots.mine .hitln:hover{stroke:#ffd84d55}
+
+/* ---- Dice: real tumbling ---- */
+.dface.tumble,.ldie.tumble,.bg-d.tumble{animation:gx-tumble .6s cubic-bezier(.2,.8,.3,1.2)}
+@keyframes gx-tumble{0%{transform:translateY(-40px) rotate(-260deg) scale(.7);filter:blur(1.5px)}55%{transform:translateY(4px) rotate(18deg) scale(1.08);filter:none}75%{transform:translateY(-6px) rotate(-6deg)}100%{transform:none}}
+.dface i.on{transform:scale(.92)}
+.sc tr:nth-child(even) td{background:#ffffff05}
+.sc td,.sc th{padding:5px 10px}
+.sc th.cur{color:var(--gold);text-shadow:0 0 10px #ffc83d88}
+.sc td.pick{animation:gx-glowpick 1.4s ease-in-out infinite}
+@keyframes gx-glowpick{50%{background:#ffc83d33;box-shadow:inset 0 0 0 1px #ffd84d88}}
+.sc tr.tot td{font-size:17px;font-weight:900;color:#fff;border-top:2px solid #ffffff22}
+
+/* ---- Mancala: glossy gem stones ---- */
+.stones i{background:radial-gradient(circle at 35% 30%,#fff,var(--sc,#4dd4ff) 45%,color-mix(in srgb,var(--sc,#4dd4ff) 55%,#000))!important;box-shadow:0 2px 2px #0008!important}
+.stones i:nth-child(4n+1){--sc:#ff4d8d}.stones i:nth-child(4n+2){--sc:#3ddc84}.stones i:nth-child(4n+3){--sc:#ffd84d}.stones i:nth-child(4n){--sc:#4dd4ff}
+.pit.last{box-shadow:inset 0 8px 16px #000c,0 0 0 3px #ffd84d,0 0 18px #ffc83d88!important}
+
+/* ---- Sea Battle: moving water, explosions ---- */
+.sea{background:repeating-linear-gradient(115deg,#ffffff07 0 6px,transparent 6px 22px),linear-gradient(160deg,#0f4a9a,#0b1f66);background-size:60px 60px,100% 100%;animation:gx-water 6s linear infinite}
+@keyframes gx-water{to{background-position:60px 0,0 0}}
+.bc{background:#ffffff0e;box-shadow:inset 0 0 0 1px #ffffff0a}
+.bc.hit{animation:gx-hit .5s ease-out}
+@keyframes gx-hit{0%{transform:scale(1.8);filter:brightness(2)}100%{transform:none}}
+.bc.miss::after{animation:gx-splash .5s ease-out}
+@keyframes gx-splash{0%{transform:scale(2.4);opacity:0}}
+.sea.enemy.live .bc.aim:hover{background:#ff4d6d55;box-shadow:inset 0 0 0 2px #ff4d6d}
+
+/* ---- Crazy 8s: real card table ---- */
+.felt{background:radial-gradient(ellipse at 50% 35%,#5b37c8,#2a1670 70%,#1b0f50);box-shadow:inset 0 0 0 8px #ffffff10,inset 0 0 60px #0008,0 0 0 10px #2a1a12,0 0 0 13px #b2875a,0 22px 44px #000b;border-radius:120px;padding:26px 54px}
+.felt .pile.can .card{animation:gx-nudge 1.4s infinite}
+
+/* ---- Ludo: bigger board, 3D pawns ---- */
+.ludo{flex-wrap:nowrap;width:max-content;max-width:100%;margin:0 auto}
+@media (max-width:760px){.ludo{flex-wrap:wrap}}
+.lboard{width:min(600px,92vw);background:#fff;box-shadow:0 0 0 8px #2a1a66,0 0 0 11px #b05cff88,0 26px 50px #000b,0 0 60px #7c4dff44;border-radius:18px}
+.lc{box-shadow:inset 0 0 0 1px #0000000f,inset 0 -2px 0 #0000000a}
+.yard{border-radius:18px;opacity:1;box-shadow:inset 0 0 0 6px #ffffff40,inset 0 -8px 16px #0003}
+.lc.spot{background:#ffffffee;box-shadow:inset 0 3px 7px #0004}
+.tok{border:0!important;margin:8%;box-shadow:0 4px 0 #0005,0 6px 8px #0006,inset 0 0 0 3px #ffffffcc!important;position:relative}
+.tok::after{content:"";position:absolute;left:28%;top:18%;width:30%;height:26%;border-radius:50%;background:#ffffffaa;filter:blur(.5px)}
+.tok.mv{animation:gx-tokhop .9s ease-in-out infinite!important;box-shadow:0 0 0 3px #ffd84d,0 0 16px 4px #ffc83d,0 6px 8px #0006!important}
+@keyframes gx-tokhop{50%{transform:translateY(-14%) scale(1.06)}}
+.ldie{background:radial-gradient(circle at 30% 25%,#fff,#f1eeff 55%,#d8d0ff);box-shadow:0 7px 0 #8f80d0,0 12px 20px #0009;border-radius:16px}
+.ldie i.on{background:radial-gradient(circle at 40% 35%,#5a4a9e,#1b1240);box-shadow:inset 0 1px 2px #000a}
+
+/* ---- Minesweeper Battle ---- */
+.ms-c:not(.open){background:linear-gradient(160deg,#9a8cf0,#6a57d8);box-shadow:inset 0 -3px 0 #0003,inset 0 2px 0 #ffffff66,0 1px 2px #0006}
+.ms-c.open{background:#120e36;box-shadow:inset 0 1px 3px #000a}
+.ms-c.boom{animation:gx-hit .5s ease-out}
+.ms-board{background:linear-gradient(180deg,#33278a,#1d1560);box-shadow:0 8px 0 #110a38,0 20px 36px #000a,inset 0 2px 0 #ffffff26}
+
+/* ---- Snake ---- */
+.sn-cv{box-shadow:0 0 0 4px #2a1a66,0 0 0 6px #6dff9a55,0 0 60px #3ddc8433,0 20px 40px #000a}
+
+/* ---- Game over: trophy rays ---- */
+.modal .box{position:relative;overflow:hidden}
+.modal .box.gx-won::before{content:"";position:absolute;left:50%;top:70px;width:520px;height:520px;margin:-260px 0 0 -260px;background:repeating-conic-gradient(from 0deg,#ffd84d26 0 10deg,transparent 10deg 20deg);border-radius:50%;animation:gx-rays 12s linear infinite;z-index:-1;mask:radial-gradient(circle,#000 20%,transparent 65%);-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%)}
+.modal .box.gx-won .big{animation:gx-trophy .8s cubic-bezier(.2,.9,.3,1.5) both}
+.modal .box.gx-won h2{background:linear-gradient(90deg,#fff6c2,#ffd84d,#ffb84d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.modal .box.gx-lost .big{filter:grayscale(.3) drop-shadow(0 0 12px #8f7cff)}
+@keyframes gx-rays{to{transform:rotate(360deg)}}
+@keyframes gx-trophy{0%{transform:scale(.2) rotate(-30deg);opacity:0}100%{transform:none;opacity:1}}
+
+/* ---- Player bar pills: a little more depth ---- */
+.players .pl,.pbar .pl{box-shadow:0 3px 0 #0004,inset 0 1px 0 #ffffff1a}
+@media (prefers-reduced-motion:reduce){.nw .mk,.nw .mk svg *,.dface.tumble,.ldie.tumble,.bg-d.tumble,.c4 .disc[data-new],.rd.new,.tok.mv{animation:none!important}}
+body.gx-calm .nw .mk,body.gx-calm .nw .mk svg *,body.gx-calm .tumble,body.gx-calm .c4 .disc[data-new],body.gx-calm .rd.new{animation:none!important}
+
+/* ---- Card tables: wood rail, felt grain, warm light from above ---- */
+.t4,.pktable,.ctable,.ldtable{border:0!important;box-shadow:inset 0 0 0 6px #ffffff0d,inset 0 0 70px #000b,0 0 0 10px #3a2212,0 0 0 13px #b2875a,0 0 0 15px #2a170b,0 26px 50px #000b!important;
+  background-image:radial-gradient(ellipse at 50% 0%,#ffffff1f,transparent 55%),repeating-radial-gradient(circle at 30% 40%,#ffffff05 0 1px,transparent 1px 3px)!important;background-blend-mode:normal}
+.t4,.pktable,.ctable{background-color:#17603f!important}
+.ldtable{background-color:#4a1d7a!important}
+.t4 .card,.ctable .card{box-shadow:0 8px 14px #0009}
+.ts,.ps,.lseat{box-shadow:0 4px 0 #0005,0 10px 18px #0006}
+/* ---- Trivia: answers with weight ---- */
+.answers .ta{box-shadow:0 5px 0 #0006,0 10px 18px #0005;transition:transform .12s,box-shadow .12s,filter .2s}
+.answers .ta[data-act]:hover{transform:translateY(-3px);box-shadow:0 8px 0 #0006,0 16px 24px #0006;filter:brightness(1.12)}
+.answers .ta[data-act]:active{transform:translateY(3px);box-shadow:0 2px 0 #0006}
+.answers .ta.right{animation:gx-right .6s cubic-bezier(.2,.9,.3,1.4);box-shadow:0 0 0 3px #3ddc84,0 0 30px #3ddc84aa!important}
+.answers .ta.wrong{animation:gx-shake .35s 2}
+@keyframes gx-right{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:none}}
+.gain{animation:gx-pop2 .5s cubic-bezier(.2,.9,.3,1.5)}
+/* ---- Word Hunt tiles ---- */
+.wt{transition:transform .1s}.wt:active{transform:translateY(3px);box-shadow:0 2px 0 #b09060}
+@media (max-width:640px){.t4,.pktable,.ctable,.ldtable{width:calc(100% - 28px)!important;margin-left:auto!important;margin-right:auto!important;box-shadow:inset 0 0 0 4px #ffffff0d,inset 0 0 50px #000b,0 0 0 6px #3a2212,0 0 0 8px #b2875a,0 16px 30px #000b!important}}
 `;
 const h = (t: string) => new Bun.CryptoHasher("sha256").update(t).digest("hex").slice(0, 16);
 Bun.serve({

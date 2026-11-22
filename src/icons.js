@@ -3,7 +3,21 @@
   // ===== small SVG helpers =====
   function L(id, a, b, x2, y2) { return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (x2 == null ? 0 : x2) + '" y2="' + (y2 == null ? 1 : y2) + '"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient>'; }
   function R(id, a, b) { return '<radialGradient id="' + id + '" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></radialGradient>'; }
-  function svg(defs, body) { return '<svg class="gx-ic" viewBox="0 0 120 120" aria-hidden="true"><defs>' + defs + "</defs>" + body + "</svg>"; }
+  // every logo gets the same finish: a soft bevel lit from the top left, a crisp rim and a contact shadow
+  var FIN = '<filter id="gxFin" x="-15%" y="-15%" width="130%" height="135%" color-interpolation-filters="sRGB">' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="b"/>' +
+    '<feSpecularLighting in="b" surfaceScale="2.6" specularConstant=".85" specularExponent="22" lighting-color="#ffffff" result="sp"><fePointLight x="24" y="-30" z="70"/></feSpecularLighting>' +
+    '<feComposite in="sp" in2="SourceAlpha" operator="in" result="sp2"/>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="2.2" result="ib"/><feOffset in="ib" dx="0" dy="-2.2" result="io"/><feComposite in="SourceAlpha" in2="io" operator="out" result="edge"/>' +
+    '<feFlood flood-color="#000" flood-opacity=".28"/><feComposite in2="edge" operator="in" result="shade"/>' +
+    '<feComposite in="SourceGraphic" in2="sp2" operator="arithmetic" k2="1" k3=".5" result="lit"/>' +
+    '<feMerge result="m"><feMergeNode in="lit"/><feMergeNode in="shade"/></feMerge>' +
+    '<feComposite in="m" in2="SourceAlpha" operator="in" result="clip"/>' +
+    '<feDropShadow in="clip" dx="0" dy="2.5" stdDeviation="1.8" flood-color="#08051a" flood-opacity=".55"/></filter>';
+  function svg(defs, body) {
+    var sh = ""; if (body.indexOf(SH) === 0) { sh = '<ellipse cx="60" cy="110" rx="38" ry="6" fill="#000" opacity=".35" filter="blur(2px)"/>'; body = body.slice(SH.length); }
+    return '<svg class="gx-ic" viewBox="0 0 120 120" aria-hidden="true"><defs>' + defs + FIN + "</defs>" + sh + '<g filter="url(#gxFin)">' + body + "</g></svg>";
+  }
   var SH = '<ellipse cx="60" cy="109" rx="36" ry="5.5" fill="#000" opacity=".3"/>';
   var GL = function (x, y, rx, ry, rot) { return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + rx + '" ry="' + ry + '" fill="#fff" opacity=".35"' + (rot ? ' transform="rotate(' + rot + " " + x + " " + y + ')"' : "") + "/>"; };
   var PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
@@ -198,6 +212,64 @@
         card(54, 28, 36, 54, 6, "#fff", '<text x="62" y="44" font-size="11" font-weight="900" fill="#e8335a" font-family="system-ui">9</text>' + HEART(72, 62, 0.6, "#e8335a")) +
         '<rect x="52" y="88" width="56" height="22" rx="11" fill="#3ddc84"/><text x="80" y="104" text-anchor="middle" font-size="14" font-weight="900" fill="#06301a" font-family="system-ui">GIN!</text>');
     },
+  };
+  // ===== redrawn logos: chunkier, more depth =====
+  function slab(x, y, w, h, r, top, side, d) { return '<rect x="' + x + '" y="' + (y + d) + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="' + side + '"/><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="' + top + '"/>'; }
+  function bigX(cx, cy, s, g) { return '<g transform="translate(' + cx + " " + cy + ") scale(" + s + ')"><path d="M-14-20 0-6 14-20 20-14 6 0 20 14 14 20 0 6-14 20-20 14-6 0-20-14Z" fill="#a3124a" transform="translate(0 3)"/><path d="M-14-20 0-6 14-20 20-14 6 0 20 14 14 20 0 6-14 20-20 14-6 0-20-14Z" fill="url(#' + g + ')"/></g>'; }
+  function bigO(cx, cy, s, g) { return '<g transform="translate(' + cx + " " + cy + ") scale(" + s + ')"><circle cy="3" r="15" fill="none" stroke="#0b6f8f" stroke-width="10"/><circle r="15" fill="none" stroke="url(#' + g + ')" stroke-width="10"/></g>'; }
+  IC.ttt = function () {
+    return svg(L("t1", "#4a3aa8", "#24185e") + L("tx", "#ff8ab5", "#ff2f74") + L("to", "#8af0ff", "#1fb8e6"),
+      SH + slab(14, 16, 92, 86, 18, "url(#t1)", "#140c3a", 7) +
+      '<g stroke="#8f7cff" stroke-width="5" stroke-linecap="round" opacity=".9"><path d="M45 24v70M75 24v70M22 47h76M22 71h76"/></g>' +
+      bigX(33, 35, 0.62, "tx") + bigO(87, 35, 0.6, "to") + bigX(60, 59, 0.62, "tx") + bigO(33, 83, 0.6, "to") + bigX(87, 83, 0.62, "tx") +
+      '<path d="M24 25 96 93" stroke="#ffd84d" stroke-width="5" stroke-linecap="round" opacity=".95"/>');
+  };
+  IC.uttt = function () {
+    var g = "", k, i;
+    for (k = 0; k < 9; k++) {
+      var bx = 16 + (k % 3) * 30, by = 14 + Math.floor(k / 3) * 30;
+      g += slab(bx, by, 26, 26, 6, k === 4 ? "url(#u2)" : "url(#u1)", "#0d0a2e", 3);
+      g += '<g stroke="#ffffff38" stroke-width="1.4"><path d="M' + (bx + 9) + " " + (by + 3) + "v20M" + (bx + 17) + " " + (by + 3) + "v20M" + (bx + 3) + " " + (by + 9) + "h20M" + (bx + 3) + " " + (by + 17) + 'h20"/></g>';
+      for (i = 0; i < 9; i++) if ((k * 7 + i * 3) % 5 === 0) { var cx = bx + 5 + (i % 3) * 8, cy = by + 5 + Math.floor(i / 3) * 8; g += (i + k) % 2 ? '<circle cx="' + cx + '" cy="' + cy + '" r="2.3" fill="none" stroke="#5ee0ff" stroke-width="1.6"/>' : '<path d="M' + (cx - 2) + " " + (cy - 2) + "l4 4m0-4-4 4" + '" stroke="#ff5c93" stroke-width="1.8" stroke-linecap="round"/>'; }
+    }
+    return svg(L("u1", "#3b2f8f", "#1d1652") + L("u2", "#ffe27a", "#f0a72c") + L("ux", "#ff8ab5", "#ff2f74"), SH + g + bigX(60, 57, 0.68, "ux"));
+  };
+  IC.dots = function () {
+    var d = "", x, y;
+    for (y = 0; y < 4; y++) for (x = 0; x < 4; x++) d += '<circle cx="' + (24 + x * 24) + '" cy="' + (20 + y * 24) + '" r="5.5" fill="url(#dd)"/>';
+    return svg(R("dd", "#ffffff", "#b9b0e8") + L("db1", "#ff7aa8", "#e8336d") + L("db2", "#7ae6ff", "#1fa8e6"),
+      SH + '<rect x="24" y="20" width="24" height="24" fill="url(#db1)"/><rect x="72" y="44" width="24" height="24" fill="url(#db2)"/><rect x="48" y="68" width="24" height="24" fill="url(#db1)"/>' +
+      '<text x="36" y="38" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">A</text><text x="84" y="62" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">B</text><text x="60" y="86" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui">A</text>' +
+      '<g stroke-width="6" stroke-linecap="round" fill="none"><path d="M24 20H48V44H24Z M48 68H72V92H48Z" stroke="#ff4d8d"/><path d="M72 44H96V68H72Z M24 68V92 M72 20H96" stroke="#2ec8ff"/><path d="M48 44V68" stroke="#ffd84d" stroke-dasharray="3 7"/></g>' + d);
+  };
+  IC.typing = function () {
+    var k = "", r, i, rows = [[22, 9, 0], [26, 8, 1], [32, 7, 2]];
+    rows.forEach(function (rw) { for (i = 0; i < rw[1]; i++) { var x = rw[0] + i * 9.4, y = 58 + rw[2] * 11, hot = (rw[2] === 1 && i === 3) || (rw[2] === 0 && i === 6); k += '<rect x="' + x + '" y="' + (y + 2.2) + '" width="8" height="8.5" rx="2" fill="' + (hot ? "#c77a00" : "#9d93cf") + '"/><rect x="' + x + '" y="' + y + '" width="8" height="8.5" rx="2" fill="' + (hot ? "#ffd84d" : "#f4f1ff") + '"/>'; } });
+    return svg(L("kb", "#5b4ad0", "#2b1f7a") + L("bolt", "#fff3a6", "#ffb800"),
+      SH + '<g transform="rotate(-8 60 74)">' + slab(14, 50, 92, 48, 11, "url(#kb)", "#160f45", 7) + k + '<rect x="40" y="91" width="40" height="5" rx="2.5" fill="#f4f1ff"/></g>' +
+      '<path d="M74 6 50 42h14l-8 26 28-38H70l10-24Z" fill="#c77a00" transform="translate(1 3)"/><path d="M74 6 50 42h14l-8 26 28-38H70l10-24Z" fill="url(#bolt)"/>' +
+      '<g stroke="#7ae6ff" stroke-width="4" stroke-linecap="round"><path d="M14 22h22M8 32h24M16 42h14"/></g>');
+  };
+  IC.mines = function () {
+    var t = "", i;
+    for (i = 0; i < 9; i++) { var x = 14 + (i % 3) * 31, y = 40 + Math.floor(i / 3) * 22, open = [0, 1, 3].indexOf(i) >= 0; t += open ? '<rect x="' + x + '" y="' + y + '" width="28" height="19" rx="4" fill="#1a1446"/><text x="' + (x + 14) + '" y="' + (y + 15) + '" text-anchor="middle" font-size="14" font-weight="900" fill="' + ["#4dd4ff", "#3ddc84", "#ff6b81", "", ""][i % 3] + '" font-family="system-ui">' + (1 + (i % 3)) + "</text>" : slab(x, y, 28, 17, 4, "url(#mt)", "#3b2c9f", 3); }
+    var spikes = ""; for (i = 0; i < 8; i++) { var a = i * Math.PI / 4; spikes += '<path d="M' + (82 + Math.cos(a) * 12).toFixed(1) + " " + (36 + Math.sin(a) * 12).toFixed(1) + "L" + (82 + Math.cos(a) * 24).toFixed(1) + " " + (36 + Math.sin(a) * 24).toFixed(1) + '" stroke="#2b2840" stroke-width="6" stroke-linecap="round"/>'; }
+    return svg(L("mt", "#a89bff", "#6f5ce6") + R("mb", "#6e6a8a", "#0b0a14") + L("mf", "#ff6b81", "#e8203f"),
+      SH + t + spikes + '<circle cx="82" cy="36" r="17" fill="url(#mb)"/><circle cx="76" cy="30" r="5" fill="#fff" opacity=".7"/><circle cx="88" cy="42" r="3" fill="#ff3b5c"/>' +
+      '<path d="M26 12v34" stroke="#d9d2ff" stroke-width="4" stroke-linecap="round"/><path d="M28 12 50 20 28 29Z" fill="url(#mf)"/>');
+  };
+  IC.gin = function () {
+    function c(x, rot, n) { return card(x, 24, 40, 58, rot, "#fff", '<text x="' + (x + 6) + '" y="' + 40 + '" font-size="13" font-weight="900" fill="#e8335a" font-family="system-ui">' + n + "</text>" + HEART(x + 20, 58, 0.75, "#e8335a")); }
+    return svg(L("gr", "#5dffa8", "#13b866"), SH + c(12, -20, "7") + c(40, -4, "8") + c(66, 12, "9") +
+      '<g transform="rotate(-6 60 96)"><path d="M18 88h84l-6 9 6 9H18l6-9Z" fill="#0b7a45" transform="translate(0 3)"/><path d="M18 88h84l-6 9 6 9H18l6-9Z" fill="url(#gr)"/><text x="60" y="102" text-anchor="middle" font-size="15" font-weight="900" fill="#053d22" font-family="system-ui" letter-spacing="2">GIN!</text></g>');
+  };
+  IC.snake = function () {
+    return svg(L("sk1", "#8cffb4", "#16a35c") + R("sa1", "#ff9db0", "#d81e4a") + '<pattern id="skp" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="2.2" fill="#0b6b38" opacity=".45"/></pattern>',
+      SH + '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="#0b6b38" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 3)"/>' +
+      '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="url(#sk1)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M22 94C10 94 10 74 26 74H82C98 74 98 52 82 52H40C24 52 24 32 40 32H66" fill="none" stroke="url(#skp)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<ellipse cx="72" cy="31" rx="15" ry="12" fill="#2ed47a"/><circle cx="74" cy="25" r="5" fill="#fff"/><circle cx="75.5" cy="25" r="2.6" fill="#111"/><path d="M86 33l9 1-7 4m7-4-6-4" fill="none" stroke="#ff4d6d" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<circle cx="98" cy="96" r="13" fill="url(#sa1)"/><path d="M98 83c0-6 4-8 9-8" stroke="#3ddc84" stroke-width="3.5" fill="none" stroke-linecap="round"/><ellipse cx="93" cy="91" rx="3.5" ry="5" fill="#fff" opacity=".45"/>');
   };
   // each logo sits on its own colour tile: [top colour, bottom colour, glow]
   var TILE = {

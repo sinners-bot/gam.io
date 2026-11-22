@@ -15,6 +15,6 @@ out("extras.tsx", pack("ui4.ts", "extra.js", "extra.css", "extra.ts"));
 out("bluff.tsx", pack("ui5.ts", "bluff.js", "bluff.css", "bluff.ts"));
 out("more.tsx", pack("ui8.ts", "more.js", "more.css", "more.ts"));
 const rawCat = (...fs2) => { const t = fs2.map((x) => src(x)).join("\n"); if (t.includes("`") || t.includes("${")) throw new Error(fs2.join("/") + " has backtick/${"); return "String.raw`" + t + "`"; };
-out("gamio.tsx", src("ui7.ts").replace("__CLIENT_JS__", () => rawCat("gamio.js", "icons.js", "meta.js", "fit.js", "prefs.js")).replace("__CSS__", () => rawCat("gamio.css", "look.css", "meta.css", "fit.css", "prefs.css")));
+out("gamio.tsx", src("ui7.ts").replace("__CLIENT_JS__", () => rawCat("gamio.js", "icons.js", "meta.js", "fit.js", "prefs.js", "polish.js")).replace("__CSS__", () => rawCat("gamio.css", "look.css", "meta.css", "fit.css", "prefs.css", "polish.css")));
 out("skin.tsx", src("ui6.ts").replace("__CLIENT_JS__", () => raw("skin.js")).replace("__CSS__", () => raw("skin.css")));
 fs.copyFileSync("legal/legal.tsx", "dist/legal.tsx"); console.log("legal.tsx    copied");

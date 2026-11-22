@@ -1,0 +1,160 @@
+/* ================= GAM.IO polish ================= */
+#gx-fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999}
+.btn:active,.lvb:active,button.ghost:active{transform:scale(.96)}
+
+/* ---- Chess: drawn pieces ---- */
+.chess:not(.checkers) .pc{width:88%;height:88%;display:flex;align-items:center;justify-content:center;font-size:0}
+.gxp{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 2px #0006) drop-shadow(0 1px 0 #0004)}
+.gxp .body>*{stroke-linejoin:round;stroke-linecap:round}
+.gxp.w .body>path{fill:url(#gxPw);stroke:#3b2313;stroke-width:3.2}
+.gxp.b .body>path{fill:url(#gxPb);stroke:#050310;stroke-width:3.2}
+.gxp .body>path.ln{fill:none;stroke-width:2.6}
+.gxp.w .body>path.ln{stroke:#a08970}.gxp.b .body>path.ln{stroke:#8a80b8}
+.gxp .gem{fill:url(#gxPg)!important;stroke:#7a4a0a!important;stroke-width:2.4!important}
+.gxp .eye{fill:#2a1a0e}.gxp.b .eye{fill:#cfc6ff}
+.chess.mine .sq:hover .gxp{filter:drop-shadow(0 9px 4px #0006) drop-shadow(0 1px 0 #0004)}
+.kc{display:inline-flex;width:20px;height:20px;vertical-align:middle;font-size:0}
+.kc .gxp{filter:drop-shadow(0 1px 1px #0008)}
+
+/* ---- Tic-Tac-Toe and Ultimate: glass slab, neon marks ---- */
+.mk svg{width:1em;height:1em;overflow:visible;display:block}
+.mk svg *{fill:none;stroke-linecap:round;stroke-width:6.5}
+.mk.x svg path{stroke:#ff4d8d;filter:drop-shadow(0 0 4px #ff4d8d) drop-shadow(0 3px 0 #9d0f45)}
+.mk.o svg circle{stroke:#38d6ff;filter:drop-shadow(0 0 4px #38d6ff) drop-shadow(0 3px 0 #0b6f8f)}
+.nw .mk svg path{stroke-dasharray:28;animation:gx-draw .32s ease-out both}
+.nw .mk svg path+path{animation-delay:.12s}
+.nw .mk.x svg path{stroke-dasharray:26 26;animation:gx-drawx .4s ease-out both}
+.nw .mk.o svg circle{stroke-dasharray:66;animation:gx-drawo .38s ease-out both}
+@keyframes gx-drawx{from{stroke-dashoffset:26}to{stroke-dashoffset:0}}
+@keyframes gx-drawo{from{stroke-dashoffset:66;transform:rotate(-90deg);transform-origin:center}to{stroke-dashoffset:0}}
+.nw .mk{animation:gx-thump .35s cubic-bezier(.2,.9,.3,1.5)}
+@keyframes gx-thump{0%{transform:scale(.6)}100%{transform:none}}
+.ttt{background:linear-gradient(180deg,#3a2c94,#22186a);box-shadow:0 10px 0 #120b3d,0 26px 46px #000b,0 0 0 2px #8f7cff66,0 0 60px #7c4dff44,inset 0 2px 0 #ffffff33;border-radius:28px;padding:14px}
+.ttt .tc{font-size:min(15vw,78px);border-color:#a594ff55!important}
+.ttt .tc.open:hover{background:radial-gradient(circle,#ffffff18,transparent 70%)}
+.ttt .tc.win{background:radial-gradient(circle,#ffd84d44,transparent 72%)!important;box-shadow:none!important}
+.ttt .tc.win .mk{animation:gx-winpulse 1s ease-in-out infinite}
+@keyframes gx-winpulse{50%{transform:scale(1.12);filter:brightness(1.3)}}
+.uttt{gap:12px}
+.uttt .ub{background:linear-gradient(180deg,#33278a,#1d1560);box-shadow:0 6px 0 #110a38,0 14px 24px #0009,inset 0 2px 0 #ffffff26;border:0;border-radius:16px}
+.uttt .ub.live{box-shadow:0 6px 0 #6b4a0a,0 0 0 3px #ffd84d,0 0 26px #ffc83d88,inset 0 2px 0 #ffffff26}
+.uttt .uc{background:#0d0930aa!important;box-shadow:inset 0 2px 4px #0008;font-size:min(4.5vw,24px)!important}
+.uttt .ub.done .uc{opacity:.18}
+.uttt .ubw{font-size:min(16vw,84px)}
+.uttt .ubw .mk svg *{stroke-width:5}
+
+/* ---- Connect 4: deeper frame, polished discs ---- */
+.c4 .disc{background:radial-gradient(circle at 50% 50%,transparent 0 44%,#00000026 45% 49%,#ffffff22 50% 52%,transparent 53%),radial-gradient(circle at 34% 26%,#ffffffd9,transparent 34%),radial-gradient(circle at 50% 60%,var(--pc),color-mix(in srgb,var(--pc) 62%,#000) 100%)!important}
+.c4 .disc[data-new]{animation:gx-drop .5s cubic-bezier(.45,0,.6,1) both}
+@keyframes gx-drop{0%{transform:translateY(-520%)}62%{transform:translateY(0)}76%{transform:translateY(-14%)}88%{transform:translateY(0)}94%{transform:translateY(-4%)}100%{transform:none}}
+.c4.mine .cell:hover{background:radial-gradient(circle at 50% 35%,#24244f,#1a1a48)}
+
+/* ---- Reversi: felt, bevelled discs, flip ---- */
+.rv{background:radial-gradient(ellipse at 50% 30%,#2a9a69,#13573b 75%),#145238}
+.rd{transform-style:preserve-3d}
+.rd.p1{background:radial-gradient(circle at 34% 28%,#8d86ab,#2a2540 45%,#07060e)!important;box-shadow:0 4px 0 #000,0 6px 10px #000a,inset 0 0 0 2px #ffffff14!important}
+.rd.p2{background:radial-gradient(circle at 34% 28%,#ffffff,#eeeaff 45%,#b5acdc)!important;box-shadow:0 4px 0 #8c82b6,0 6px 10px #0008,inset 0 0 0 2px #fff!important}
+.rd.new{animation:gx-flip .45s ease-out}
+@keyframes gx-flip{0%{transform:rotateY(90deg) scale(1.15)}60%{transform:rotateY(-12deg) scale(1.05)}100%{transform:none}}
+.rc.open::after{content:"";width:28%;height:28%;border-radius:50%;background:#ffffff55;box-shadow:0 0 10px #fff8;animation:gx-breathe 1.4s ease-in-out infinite}
+@keyframes gx-breathe{50%{transform:scale(1.35);opacity:.6}}
+
+/* ---- Checkers: ridged pieces ---- */
+.ckp{background:repeating-radial-gradient(circle at 50% 50%,transparent 0 22%,#0000001f 23% 25%,transparent 26% 30%),radial-gradient(circle at 34% 28%,#ffffffb0,transparent 38%),radial-gradient(circle,var(--pc),color-mix(in srgb,var(--pc) 58%,#000))!important;box-shadow:0 5px 0 color-mix(in srgb,var(--pc) 45%,#000),0 8px 12px #000a,inset 0 0 0 3px #ffffff30!important}
+
+/* ---- Dots & Boxes ---- */
+.dots{background:radial-gradient(circle at 50% 0%,#3a2c94,#160f45 80%);box-shadow:0 10px 0 #0d0830,0 26px 46px #000b,0 0 0 2px #8f7cff55,0 0 60px #7c4dff44}
+.dots circle{fill:#fff;filter:drop-shadow(0 0 5px #b05cff) drop-shadow(0 2px 0 #6b4ad0)}
+.dots .ln.drawn{stroke-width:9;filter:drop-shadow(0 0 6px currentColor)}
+.dots .ln.last{animation:gx-lnflash .8s ease-out}
+@keyframes gx-lnflash{0%{stroke:#fff;stroke-width:14}}
+.dots .bx{opacity:.62!important;animation:gx-boxin .4s cubic-bezier(.2,.9,.3,1.4)}
+.dots text{fill:#fff;font-weight:900;font-size:30px;paint-order:stroke;stroke:#0005;stroke-width:4px}
+@keyframes gx-boxin{from{transform:scale(.2);opacity:0}}
+.dots.mine .hitln:hover+circle,.dots.mine .hitln:hover{stroke:#ffd84d55}
+
+/* ---- Dice: real tumbling ---- */
+.dface.tumble,.ldie.tumble,.bg-d.tumble{animation:gx-tumble .6s cubic-bezier(.2,.8,.3,1.2)}
+@keyframes gx-tumble{0%{transform:translateY(-40px) rotate(-260deg) scale(.7);filter:blur(1.5px)}55%{transform:translateY(4px) rotate(18deg) scale(1.08);filter:none}75%{transform:translateY(-6px) rotate(-6deg)}100%{transform:none}}
+.dface i.on{transform:scale(.92)}
+.sc tr:nth-child(even) td{background:#ffffff05}
+.sc td,.sc th{padding:5px 10px}
+.sc th.cur{color:var(--gold);text-shadow:0 0 10px #ffc83d88}
+.sc td.pick{animation:gx-glowpick 1.4s ease-in-out infinite}
+@keyframes gx-glowpick{50%{background:#ffc83d33;box-shadow:inset 0 0 0 1px #ffd84d88}}
+.sc tr.tot td{font-size:17px;font-weight:900;color:#fff;border-top:2px solid #ffffff22}
+
+/* ---- Mancala: glossy gem stones ---- */
+.stones i{background:radial-gradient(circle at 35% 30%,#fff,var(--sc,#4dd4ff) 45%,color-mix(in srgb,var(--sc,#4dd4ff) 55%,#000))!important;box-shadow:0 2px 2px #0008!important}
+.stones i:nth-child(4n+1){--sc:#ff4d8d}.stones i:nth-child(4n+2){--sc:#3ddc84}.stones i:nth-child(4n+3){--sc:#ffd84d}.stones i:nth-child(4n){--sc:#4dd4ff}
+.pit.last{box-shadow:inset 0 8px 16px #000c,0 0 0 3px #ffd84d,0 0 18px #ffc83d88!important}
+
+/* ---- Sea Battle: moving water, explosions ---- */
+.sea{background:repeating-linear-gradient(115deg,#ffffff07 0 6px,transparent 6px 22px),linear-gradient(160deg,#0f4a9a,#0b1f66);background-size:60px 60px,100% 100%;animation:gx-water 6s linear infinite}
+@keyframes gx-water{to{background-position:60px 0,0 0}}
+.bc{background:#ffffff0e;box-shadow:inset 0 0 0 1px #ffffff0a}
+.bc.hit{animation:gx-hit .5s ease-out}
+@keyframes gx-hit{0%{transform:scale(1.8);filter:brightness(2)}100%{transform:none}}
+.bc.miss::after{animation:gx-splash .5s ease-out}
+@keyframes gx-splash{0%{transform:scale(2.4);opacity:0}}
+.sea.enemy.live .bc.aim:hover{background:#ff4d6d55;box-shadow:inset 0 0 0 2px #ff4d6d}
+
+/* ---- Crazy 8s: real card table ---- */
+.felt{background:radial-gradient(ellipse at 50% 35%,#5b37c8,#2a1670 70%,#1b0f50);box-shadow:inset 0 0 0 8px #ffffff10,inset 0 0 60px #0008,0 0 0 10px #2a1a12,0 0 0 13px #b2875a,0 22px 44px #000b;border-radius:120px;padding:26px 54px}
+.felt .pile.can .card{animation:gx-nudge 1.4s infinite}
+
+/* ---- Ludo: bigger board, 3D pawns ---- */
+.ludo{flex-wrap:nowrap;width:max-content;max-width:100%;margin:0 auto}
+@media (max-width:760px){.ludo{flex-wrap:wrap}}
+.lboard{width:min(600px,92vw);background:#fff;box-shadow:0 0 0 8px #2a1a66,0 0 0 11px #b05cff88,0 26px 50px #000b,0 0 60px #7c4dff44;border-radius:18px}
+.lc{box-shadow:inset 0 0 0 1px #0000000f,inset 0 -2px 0 #0000000a}
+.yard{border-radius:18px;opacity:1;box-shadow:inset 0 0 0 6px #ffffff40,inset 0 -8px 16px #0003}
+.lc.spot{background:#ffffffee;box-shadow:inset 0 3px 7px #0004}
+.tok{border:0!important;margin:8%;box-shadow:0 4px 0 #0005,0 6px 8px #0006,inset 0 0 0 3px #ffffffcc!important;position:relative}
+.tok::after{content:"";position:absolute;left:28%;top:18%;width:30%;height:26%;border-radius:50%;background:#ffffffaa;filter:blur(.5px)}
+.tok.mv{animation:gx-tokhop .9s ease-in-out infinite!important;box-shadow:0 0 0 3px #ffd84d,0 0 16px 4px #ffc83d,0 6px 8px #0006!important}
+@keyframes gx-tokhop{50%{transform:translateY(-14%) scale(1.06)}}
+.ldie{background:radial-gradient(circle at 30% 25%,#fff,#f1eeff 55%,#d8d0ff);box-shadow:0 7px 0 #8f80d0,0 12px 20px #0009;border-radius:16px}
+.ldie i.on{background:radial-gradient(circle at 40% 35%,#5a4a9e,#1b1240);box-shadow:inset 0 1px 2px #000a}
+
+/* ---- Minesweeper Battle ---- */
+.ms-c:not(.open){background:linear-gradient(160deg,#9a8cf0,#6a57d8);box-shadow:inset 0 -3px 0 #0003,inset 0 2px 0 #ffffff66,0 1px 2px #0006}
+.ms-c.open{background:#120e36;box-shadow:inset 0 1px 3px #000a}
+.ms-c.boom{animation:gx-hit .5s ease-out}
+.ms-board{background:linear-gradient(180deg,#33278a,#1d1560);box-shadow:0 8px 0 #110a38,0 20px 36px #000a,inset 0 2px 0 #ffffff26}
+
+/* ---- Snake ---- */
+.sn-cv{box-shadow:0 0 0 4px #2a1a66,0 0 0 6px #6dff9a55,0 0 60px #3ddc8433,0 20px 40px #000a}
+
+/* ---- Game over: trophy rays ---- */
+.modal .box{position:relative;overflow:hidden}
+.modal .box.gx-won::before{content:"";position:absolute;left:50%;top:70px;width:520px;height:520px;margin:-260px 0 0 -260px;background:repeating-conic-gradient(from 0deg,#ffd84d26 0 10deg,transparent 10deg 20deg);border-radius:50%;animation:gx-rays 12s linear infinite;z-index:-1;mask:radial-gradient(circle,#000 20%,transparent 65%);-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%)}
+.modal .box.gx-won .big{animation:gx-trophy .8s cubic-bezier(.2,.9,.3,1.5) both}
+.modal .box.gx-won h2{background:linear-gradient(90deg,#fff6c2,#ffd84d,#ffb84d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.modal .box.gx-lost .big{filter:grayscale(.3) drop-shadow(0 0 12px #8f7cff)}
+@keyframes gx-rays{to{transform:rotate(360deg)}}
+@keyframes gx-trophy{0%{transform:scale(.2) rotate(-30deg);opacity:0}100%{transform:none;opacity:1}}
+
+/* ---- Player bar pills: a little more depth ---- */
+.players .pl,.pbar .pl{box-shadow:0 3px 0 #0004,inset 0 1px 0 #ffffff1a}
+@media (prefers-reduced-motion:reduce){.nw .mk,.nw .mk svg *,.dface.tumble,.ldie.tumble,.bg-d.tumble,.c4 .disc[data-new],.rd.new,.tok.mv{animation:none!important}}
+body.gx-calm .nw .mk,body.gx-calm .nw .mk svg *,body.gx-calm .tumble,body.gx-calm .c4 .disc[data-new],body.gx-calm .rd.new{animation:none!important}
+
+/* ---- Card tables: wood rail, felt grain, warm light from above ---- */
+.t4,.pktable,.ctable,.ldtable{border:0!important;box-shadow:inset 0 0 0 6px #ffffff0d,inset 0 0 70px #000b,0 0 0 10px #3a2212,0 0 0 13px #b2875a,0 0 0 15px #2a170b,0 26px 50px #000b!important;
+  background-image:radial-gradient(ellipse at 50% 0%,#ffffff1f,transparent 55%),repeating-radial-gradient(circle at 30% 40%,#ffffff05 0 1px,transparent 1px 3px)!important;background-blend-mode:normal}
+.t4,.pktable,.ctable{background-color:#17603f!important}
+.ldtable{background-color:#4a1d7a!important}
+.t4 .card,.ctable .card{box-shadow:0 8px 14px #0009}
+.ts,.ps,.lseat{box-shadow:0 4px 0 #0005,0 10px 18px #0006}
+/* ---- Trivia: answers with weight ---- */
+.answers .ta{box-shadow:0 5px 0 #0006,0 10px 18px #0005;transition:transform .12s,box-shadow .12s,filter .2s}
+.answers .ta[data-act]:hover{transform:translateY(-3px);box-shadow:0 8px 0 #0006,0 16px 24px #0006;filter:brightness(1.12)}
+.answers .ta[data-act]:active{transform:translateY(3px);box-shadow:0 2px 0 #0006}
+.answers .ta.right{animation:gx-right .6s cubic-bezier(.2,.9,.3,1.4);box-shadow:0 0 0 3px #3ddc84,0 0 30px #3ddc84aa!important}
+.answers .ta.wrong{animation:gx-shake .35s 2}
+@keyframes gx-right{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:none}}
+.gain{animation:gx-pop2 .5s cubic-bezier(.2,.9,.3,1.5)}
+/* ---- Word Hunt tiles ---- */
+.wt{transition:transform .1s}.wt:active{transform:translateY(3px);box-shadow:0 2px 0 #b09060}
+@media (max-width:640px){.t4,.pktable,.ctable,.ldtable{width:calc(100% - 28px)!important;margin-left:auto!important;margin-right:auto!important;box-shadow:inset 0 0 0 4px #ffffff0d,inset 0 0 50px #000b,0 0 0 6px #3a2212,0 0 0 8px #b2875a,0 16px 30px #000b!important}}

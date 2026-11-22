@@ -142,7 +142,7 @@
   }
   setInterval(tickTimer, 100);
   function turnFx(g) {
-    var mine = !!(g && gameShown() && g.yourTurn);
+    var mine = !!(g && gameShown() && g.yourTurn && g.phase === "playing");
     document.body.classList.toggle("gx-myturn", mine);
     if (mine && !wasMine && !window.__gxCalm) {
       var f = document.createElement("div"); f.className = "gx-yt"; f.innerHTML = "<b>YOUR TURN</b>";
