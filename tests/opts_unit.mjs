@@ -1,0 +1,16 @@
+import fs from "fs";
+fs.copyFileSync("../cards.ts","/tmp/cards_unit.ts"); fs.copyFileSync("../party.ts","/tmp/party_unit.ts");
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const C=(await import("/tmp/cards_unit.ts")).default({shuffle});
+const cl=C.clash;
+let s=cl.init(3,{stack:true}); s.hands=[["RD","KF","G5"],["BD","Y3"],["Y7","G1"]]; s.discard=["R4"]; s.color="R"; s.turn=0;
+console.log(JSON.stringify(cl.move(s,0,{action:"play",card:"RD"})), "pend", s.pend, "turn", s.turn);
+console.log("Bob +2 on +2:", JSON.stringify(cl.move(s,1,{action:"play",card:"BD"})), "pend", s.pend, "turn", s.turn);
+console.log("Cat can't play Y7:", JSON.stringify(cl.move(s,2,{action:"play",card:"Y7"})));
+console.log("Cat draws:", JSON.stringify(cl.move(s,2,{action:"draw"})), "Cat hand", s.hands[2].length, "pend", s.pend, "turn", s.turn, s.log);
+let t=cl.init(2,{drawTo:true}); t.hands=[["Y3"],["B1"]]; t.discard=["R4"]; t.color="R"; t.turn=0; t.deck=["G2","B9","R7","Y1"];
+console.log("drawTo:", JSON.stringify(cl.move(t,0,{action:"draw"})), t.hands[0], t.log);
+let u=cl.init(2,{}); console.log("default no stack:", u.stack, u.drawTo);
+const h=C.hearts.init(4,{target:50}); console.log("hearts target", h.target);
+const P=(await import("/tmp/party_unit.ts")).default({shuffle, rnd:a=>a[0]});
+const d=P.draw.init(3,{rounds:2,pack:"deutsch"}); console.log("draw rounds", d.rounds, "pack", d.pack);

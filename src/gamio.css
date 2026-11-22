@@ -155,3 +155,4 @@ body.gx-myturn .plc.turn{animation:gx-chip 1.2s ease-in-out infinite}
   .gx-burst{font-size:46px}
   #gx-inv{top:auto;bottom:80px;right:8px;left:8px;max-width:none}
 }
+.jpend{position:absolute;right:-64px;top:-14px;font-size:30px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ff3b4f,#b3123a);border-radius:16px;padding:4px 12px;box-shadow:0 0 22px #ff3b4f;animation:gx-blink .8s infinite}

@@ -112,6 +112,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   // ===== sound / haptics =====
   var actx = null;
   function chime(f, vol) {
+    if (window.__gxMute) return;
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       var t = actx.currentTime;
@@ -144,7 +145,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   function turnFx(g) {
     var mine = !!(g && gameShown() && g.yourTurn);
     document.body.classList.toggle("gx-myturn", mine);
-    if (mine && !wasMine) {
+    if (mine && !wasMine && !window.__gxCalm) {
       var f = document.createElement("div"); f.className = "gx-yt"; f.innerHTML = "<b>YOUR TURN</b>";
       document.body.appendChild(f); setTimeout(function () { f.remove(); }, 1300);
       chime(660, 0.06); try { if (navigator.vibrate) navigator.vibrate(60); } catch (er) {}
@@ -200,7 +201,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     if (J.gid !== g.id) { J = { gid: g.id, sig: "", pile: [{ c: top, r: 0 }], plog: st.log, hand: [], counts: st.counts.slice(), myRect: null, wild: null, peek: 0 }; }
     if (J.pile[J.pile.length - 1].c !== top || (st.log !== J.plog && /^\{\d+\} played/.test(st.log || ""))) { J.pile.push({ c: top, r: Math.round(Math.random() * 30 - 15) }); if (J.pile.length > 5) J.pile.shift(); }
     J.plog = st.log;
-    var ok = function (c) { return c[0] === "K" || c[0] === st.color || c[1] === top[1]; };
+    var ok = function (c) { if (st.pend) return c === "KF" || (top[1] === "D" && c[1] === "D"); return c[0] === "K" || c[0] === st.color || c[1] === top[1]; };
     var seats = "";
     for (var k = 1; k < n; k++) {
       var i = (me + k) % n, a = (180 + (180 * k) / n) * Math.PI / 180, x = 50 + 44 * Math.cos(a), y = 54 + 46 * Math.sin(a), cnt = st.counts[i], m = Math.min(cnt, 12), fan = "";
@@ -208,8 +209,8 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
       seats += '<div class="jseat' + (g.turn === i && g.phase === "playing" ? " turn" : "") + (cnt === 1 ? " one" : "") + '" data-seat="' + i + '" style="left:' + x.toFixed(1) + "%;top:" + y.toFixed(1) + '%"><div class="jfan">' + fan + "</div>" + avatar(g.seats[i], 38, COLORS[i]) + '<div class="jsn"><b>' + nmOf(g, i) + '</b><em>' + cnt + "</em></div></div>";
     }
     var pile = J.pile.map(function (p, idx) { return '<div class="jpc" style="--r:' + p.r + 'deg">' + jcard(p.c, idx === J.pile.length - 1 ? " jtop" : "") + "</div>"; }).join("");
-    var deck = '<div class="jdeck' + (mine && !st.drew ? " can" : "") + '" data-act="jdraw">' + jback(" d3") + jback(" d2") + jback(" d1") + "<small>" + st.deck + "</small></div>";
-    var center = '<div class="jcenter"><div class="jring ' + (st.dir > 0 ? "cw" : "ccw") + '" style="--jc:var(--j' + st.color + ')"></div>' + deck + '<div class="jpile">' + pile + '</div><div class="jcol j' + st.color + '">' + JCN[st.color] + "</div></div>";
+    var deck = '<div class="jdeck' + (mine && (!st.drew || st.pend) ? " can" : "") + '" data-act="jdraw">' + jback(" d3") + jback(" d2") + jback(" d1") + "<small>" + st.deck + "</small></div>";
+    var center = '<div class="jcenter"><div class="jring ' + (st.dir > 0 ? "cw" : "ccw") + '" style="--jc:var(--j' + st.color + ')"></div>' + deck + '<div class="jpile">' + pile + '</div><div class="jcol j' + st.color + '">' + JCN[st.color] + "</div>" + (st.pend ? '<div class="jpend">+' + st.pend + "</div>" : "") + "</div>";
     var hand = "";
     if (st.hand) {
       var hn = st.hand.length, occ = {}, vw = window.innerWidth || 1000, cw = vw < 640 ? 70 : 96;
@@ -220,7 +221,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
         return '<div class="jslot" style="--o:' + (idx - (hn - 1) / 2).toFixed(2) + ";z-index:" + idx + '">' + jcard(c, mine ? (ok(c) ? " ok" : " dim") : "", ' data-jcard="' + c + '" data-fk="j:' + c + "#" + occ[c] + '" data-noenter="1" data-noexit="1"') + "</div>";
       }).join("") + "</div>";
     } else if (g.seat < 0) hand = '<p class="hint">Spectating</p>';
-    var hint = g.phase === "playing" ? (mine ? (st.drew ? "Play the card you drew, or pass" : "Your turn! Match the color or symbol, or draw") : g.seat < 0 ? "" : "Waiting for " + nmOf(g, g.turn) + "…") : "";
+    var hint = g.phase === "playing" ? (mine && st.pend ? "+" + st.pend + " is coming your way! Stack another, or draw " + st.pend : mine ? (st.drew ? "Play the card you drew, or pass" : "Your turn! Match the color or symbol, or draw") : g.seat < 0 ? "" : "Waiting for " + nmOf(g, g.turn) + "…") : "";
     var ctrl = mine && st.drew ? '<div class="actions"><button class="btn dark" data-act="jpass">Pass</button></div>' : "";
     var picker = J.wild ? '<div class="modal"><div class="box jpick"><h2>Pick a color</h2><div class="jwheel">' + "RGBY".split("").map(function (c) { return '<button class="j' + c + '" data-act="jcolor" data-c="' + c + '">' + JCN[c] + "</button>"; }).join("") + '</div><button class="btn dark" data-act="jcolor" data-c="">Cancel</button></div></div>' : "";
     return '<div class="jtable">' + seats + center + (st.log ? '<div class="jlog">' + jlog(g, st.log) + "</div>" : "") + "</div>" + '<p class="hint jhint">' + hint + "</p>" + hand + ctrl + picker;
@@ -234,7 +235,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   function junoAct(a, el) {
     var g = S.game; if (!g || g.type !== "clash" || !g.state) return;
     var mine = g.phase === "playing" && g.turn === g.seat;
-    if (a === "jdraw") { if (mine && !g.state.drew) send({ t: "move", action: "draw" }); else if (mine) toast("You already drew. Play it or pass"); }
+    if (a === "jdraw") { if (mine && (!g.state.drew || g.state.pend)) send({ t: "move", action: "draw" }); else if (mine) toast("You already drew. Play it or pass"); }
     else if (a === "jpass") send({ t: "move", action: "pass" });
     else if (a === "jcolor") { var c = el.getAttribute("data-c"); if (c && J.wild) send({ t: "move", action: "play", card: J.wild, color: c }); else J.myRect = null; J.wild = null; render(); }
     else if (a === "jpeek") { J.peek = g.id; render(); }
@@ -245,7 +246,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     var g = S.game; if (!g || g.type !== "clash" || !g.state) return;
     if (!(g.phase === "playing" && g.turn === g.seat)) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); return; }
     var c = el.getAttribute("data-jcard"), st = g.state;
-    if (!(c[0] === "K" || c[0] === st.color || c[1] === st.top[1])) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); toast("That card doesn't match"); return; }
+    if (!(st.pend ? c === "KF" || (st.top[1] === "D" && c[1] === "D") : c[0] === "K" || c[0] === st.color || c[1] === st.top[1])) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); toast("That card doesn't match"); return; }
     J.myRect = el.getBoundingClientRect();
     if (c[0] === "K") { J.wild = c; render(); } else send({ t: "move", action: "play", card: c });
   }, true);
@@ -263,7 +264,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   var EASE = "cubic-bezier(.2,.85,.25,1)";
   function rectOf(el) { return el ? el.getBoundingClientRect() : null; }
   function fly(el, from, opts) { // animate el from a previous rect to where it is now
-    if (!el || !from) return;
+    if (!el || !from || window.__gxCalm) return;
     var to = el.getBoundingClientRect(), dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
     var sc = opts && opts.scale != null ? opts.scale : from.width && to.width ? from.width / to.width : 1;
     var base = getComputedStyle(el).transform; base = base === "none" ? "" : base;
@@ -272,12 +273,12 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     kf.push({ transform: base || "none" });
     el.animate(kf, { duration: (opts && opts.dur) || 420, easing: EASE, delay: (opts && opts.delay) || 0, fill: "backwards" });
   }
-  function pop(el, delay, dur) { if (el) el.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1.15)", opacity: 1, offset: 0.65 }, { transform: "scale(1)", opacity: 1 }], { duration: dur || 340, easing: "ease-out", delay: delay || 0, fill: "backwards" }); }
+  function pop(el, delay, dur) { if (el && !window.__gxCalm) el.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1.15)", opacity: 1, offset: 0.65 }, { transform: "scale(1)", opacity: 1 }], { duration: dur || 340, easing: "ease-out", delay: delay || 0, fill: "backwards" }); }
   function burst(host, txt, cls) {
-    if (!host) return; var b = document.createElement("div"); b.className = "gx-burst " + (cls || ""); b.innerHTML = txt; host.appendChild(b); setTimeout(function () { b.remove(); }, 1100);
+    if (!host || window.__gxCalm) return; var b = document.createElement("div"); b.className = "gx-burst " + (cls || ""); b.innerHTML = txt; host.appendChild(b); setTimeout(function () { b.remove(); }, 1100);
   }
   function ghostFly(fromRect, toEl, html, delay) { // a temporary card flying between two places on screen
-    if (!fromRect || !toEl) return;
+    if (!fromRect || !toEl || window.__gxCalm) return;
     var to = toEl.getBoundingClientRect(), d = document.createElement("div");
     d.className = "gx-ghost"; d.innerHTML = html; d.style.left = fromRect.left + "px"; d.style.top = fromRect.top + "px";
     document.body.appendChild(d);
@@ -286,6 +287,7 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
     an.onfinish = function () { d.remove(); };
   }
   function confetti() {
+    if (window.__gxCalm) return;
     var box = document.createElement("div"); box.className = "gx-confetti";
     for (var i = 0; i < 70; i++) { var p = document.createElement("i"); p.style.left = Math.random() * 100 + "%"; p.style.background = COLORS[i % COLORS.length]; p.style.animationDelay = Math.random() * 0.6 + "s"; p.style.animationDuration = 1.6 + Math.random() * 1.4 + "s"; p.style.transform = "rotate(" + Math.random() * 360 + "deg)"; box.appendChild(p); }
     document.body.appendChild(box); setTimeout(function () { box.remove(); }, 3600);
@@ -683,6 +685,217 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   };
 })();
 
+// ---------- GAM.IO progression UI: Compete page (ranked + tournaments), challenges, achievements, locker, lobby rules ----------
+(function () {
+  var RANKED_GAMES = ["chess", "checkers", "connect4", "reversi", "battleship", "uttt", "mancala", "dots", "backgammon"];
+  var TOUR_GAMES = ["chess", "checkers", "connect4", "reversi", "battleship", "uttt", "mancala", "dots", "ttt", "backgammon", "gin", "pool"];
+  NAV.splice(2, 0, ["compete", "Compete"]);
+  ICON.compete = '<svg viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3v3H8v-3h3v-2.1A5 5 0 0 1 8.6 13 5 5 0 0 1 4 8V5h3zm0 4H6v1a3 3 0 0 0 1.3 2.5A7 7 0 0 1 7 8zm10 0v1a7 7 0 0 1-.3 2.5A3 3 0 0 0 18 8V7z"/></svg>';
+  S.tours = []; S.ladders = {}; S.lgame = "chess"; S.locker = "back"; S.tmatch = null;
+  function has(id) { return GAMES.some(function (m) { return m.id === id && !m.soon; }); }
+  function gname(id) { var m = GAMES.filter(function (x) { return x.id === id; })[0]; return m ? m.name : id; }
+
+  // ===== socket =====
+  function onMsg(m) {
+    if (m.t === "note") { toastBig(m); return true; }
+    if (m.t === "rank") { toastBig({ kind: "rank", icon: m.now >= m.old ? "📈" : "📉", title: m.name + " rating " + m.old + " → " + m.now, sub: m.tier + " · " + (m.now >= m.old ? "+" : "") + (m.now - m.old) }); if (S.ladders[m.game]) send({ t: "ladder", game: m.game }); return true; }
+    if (m.t === "ladder") { S.ladders[m.game] = m; if (S.view === "compete") render(); return true; }
+    if (m.t === "tours") { S.tours = m.list || []; if (S.view === "compete") render(); return true; }
+    if (m.t === "tmatch") { S.tmatch = m; drawTmatch(); chime2(); return true; }
+    if (m.t === "me") { applyCosmetics(m.profile); return false; }
+    return false;
+  }
+  function hook(sock) {
+    if (!sock || sock.__meta) return; sock.__meta = 1;
+    var base = sock.onmessage;
+    sock.onmessage = function (ev) { var m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (!onMsg(m) && base) base.call(sock, ev); };
+    var hello = function () { send({ t: "tlist" }); };
+    if (sock.readyState === 1) hello(); else sock.addEventListener("open", hello);
+  }
+  var baseConnect = connect;
+  connect = function () { baseConnect(); hook(ws); };
+  if (typeof ws !== "undefined" && ws) hook(ws);
+  function chime2() { if (window.__gxMute) return; try { var a = new (window.AudioContext || window.webkitAudioContext)(), t = a.currentTime; [660, 880, 1100].forEach(function (f, k) { var o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; o.connect(g); g.connect(a.destination); g.gain.setValueAtTime(0, t + k * 0.1); g.gain.linearRampToValueAtTime(window.__gxVol == null ? 0.05 : window.__gxVol * 0.05, t + k * 0.1 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + k * 0.1 + 0.4); o.start(t + k * 0.1); o.stop(t + k * 0.1 + 0.45); }); } catch (e) {} }
+
+  // ===== big toasts (achievements, dailies, unlocks, ranks) =====
+  var tq = [];
+  function toastBig(n) {
+    var box = document.getElementById("gx-notes");
+    if (!box) { box = document.createElement("div"); box.id = "gx-notes"; document.body.appendChild(box); }
+    var el = document.createElement("div"); el.className = "gx-note k-" + (n.kind || "x");
+    el.innerHTML = '<i>' + esc(n.icon || "✨") + "</i><div><b>" + esc(n.title || "") + "</b><span>" + esc(n.sub || "") + "</span></div>";
+    box.appendChild(el); tq.push(el); chime2();
+    setTimeout(function () { el.classList.add("out"); setTimeout(function () { el.remove(); }, 400); }, 5200);
+    while (tq.length > 4) tq.shift().remove();
+  }
+  function drawTmatch() {
+    var el = document.getElementById("gx-tm"), m = S.tmatch;
+    if (!m || (S.game && S.game.tour === m.id && S.game.phase === "playing")) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement("div"); el.id = "gx-tm"; document.body.appendChild(el); }
+    el.innerHTML = '<i>🏆</i><span><b>' + esc(m.name) + "</b> · round " + m.round + ": your match vs <b>" + esc(m.opp) + '</b> is ready</span><button class="btn primary" data-gm="tplay" data-id="' + esc(m.id) + '">Play</button><button class="gx-ivx" data-gm="tmx">✕</button>';
+  }
+
+  // ===== cosmetics on this device =====
+  var EQ = { back: "classic", board: "walnut", frame: "none" };
+  function applyCosmetics(p) {
+    if (!p || !p.cosmetics) return;
+    EQ = p.cosmetics.eq;
+    var b = document.body; b.className = b.className.replace(/\b(back|board)-\w+/g, "").trim();
+    b.classList.add("back-" + EQ.back, "board-" + EQ.board);
+  }
+  var baseAv = avatar;
+  avatar = function (u, size, ring) {
+    var h = baseAv(u, size, ring), fr = u ? (u.id === S.you ? EQ.frame : u.frame) : null;
+    return fr && fr !== "none" && !(u && u.bot) ? '<span class="gfr gfr-' + fr + '" style="--fs:' + (size || 36) + 'px">' + h + "</span>" : h;
+  };
+
+  // ===== emote packs: add unlocked emotes to the chat popup =====
+  new MutationObserver(function () {
+    var pop = document.querySelector(".chatpop:not([data-packs])"); if (!pop || !S.me || !S.me.emotes) return;
+    pop.setAttribute("data-packs", "1");
+    var extra = S.me.emotes.filter(function (x) { return x.i >= 12; });
+    if (extra.length) pop.insertAdjacentHTML("beforeend", '<div class="gx-packs">' + extra.map(function (x) { return '<button data-gn="emo" data-i="' + x.i + '" class="e">' + x.e + "</button>"; }).join("") + "</div>");
+  }).observe(document.body, { childList: true, subtree: true });
+
+  // ===== pages =====
+  function bar(have, n, cls) { return '<div class="bar ' + (cls || "") + '"><i style="width:' + Math.min(100, Math.round((have / Math.max(1, n)) * 100)) + '%"></i></div>'; }
+  function hrs(ms) { var h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000); return h + "h " + m + "m"; }
+  function dailyPanel(p, compact) {
+    if (!p.daily) return "";
+    var rows = p.daily.map(function (d) { return '<div class="gx-dc' + (d.done ? " done" : "") + '"><span class="ck">' + (d.done ? "✓" : "") + '</span><div><b>' + esc(d.text) + "</b>" + bar(d.have, d.n, "gold") + "</div><em>" + (d.done ? "Done" : d.have + "/" + d.n) + '</em><small>+' + d.xp + " XP</small></div>"; }).join("");
+    return '<div class="panel gx-daily' + (compact ? " compact" : "") + '"><div class="sh"><h3>Daily challenges</h3><span class="gx-reset">Resets in ' + hrs(p.dailyEnds || 0) + "</span></div>" + rows +
+      '<div class="gx-dall' + (p.dailyAll ? " done" : "") + '">' + (p.dailyAll ? "🎉 All done! Bonus +" + p.dailyBonus + " XP collected" : "🎁 Finish all three for a +" + p.dailyBonus + " XP bonus") + "</div></div>";
+  }
+  function achPanel(p) {
+    if (!p.achievements) return "";
+    var got = p.achievements.filter(function (a) { return a.at; }).length;
+    return '<div class="sh"><h3>Achievements</h3><span class="gx-reset">' + got + " / " + p.achievements.length + '</span></div><div class="gx-achs">' + p.achievements.map(function (a) {
+      return '<div class="gx-ach' + (a.at ? " on" : "") + '"><i>' + a.icon + "</i><b>" + esc(a.name) + "</b><span>" + esc(a.desc) + "</span>" + (a.at ? '<em>+' + a.xp + " XP</em>" : a.prog ? bar(a.prog[0], a.prog[1]) + "<small>" + Math.min(a.prog[0], a.prog[1]) + " / " + a.prog[1] + "</small>" : "<small>+" + a.xp + " XP</small>") + "</div>";
+    }).join("") + "</div>";
+  }
+  var KINDS = [["back", "Card backs"], ["board", "Board themes"], ["frame", "Profile frames"], ["emotes", "Emote packs"]];
+  var PACKS = { base: "👍 😂 🔥 GG!", party: "🥳 🎊 🕺 🍕", spicy: "🌶️ 💀 🤯 🫠", gg: "🏆 👑 💎 🐐" };
+  function preview(c) {
+    if (c.kind === "back") return '<div class="gx-pv-back back-' + c.id + '"><div class="card back"></div></div>';
+    if (c.kind === "board") { var sq = ""; for (var i = 0; i < 16; i++) sq += '<i class="sq ' + ((i + Math.floor(i / 4)) % 2 ? "dk" : "lt") + '"></i>'; return '<div class="gx-pv-board board-' + c.id + '"><div class="chess gx-mini">' + sq + "</div></div>"; }
+    if (c.kind === "frame") return '<div class="gx-pv-frame">' + (c.id === "none" ? baseAv(meUser(), 54) : '<span class="gfr gfr-' + c.id + '" style="--fs:54px">' + baseAv(meUser(), 54) + "</span>") + "</div>";
+    return '<div class="gx-pv-emo">' + (PACKS[c.id] || "") + "</div>";
+  }
+  function lockerPanel(p) {
+    if (!p.cosmetics) return "";
+    var eq = p.cosmetics.eq, items = p.cosmetics.items.filter(function (c) { return c.kind === S.locker; });
+    var achName = {}; (p.achievements || []).forEach(function (a) { achName[a.id] = a.name; });
+    return '<div class="sh"><h3>Locker</h3></div><div class="gx-cats">' + KINDS.map(function (k) { return '<button class="gx-cat' + (S.locker === k[0] ? " on" : "") + '" data-gm="locker" data-k="' + k[0] + '">' + k[1] + "</button>"; }).join("") + '</div><div class="gx-lock">' +
+      items.map(function (c) {
+        var on = c.kind === "emotes" ? c.owned : eq[c.kind] === c.id;
+        var btn = !c.owned ? '<small class="req">🔒 ' + (c.level ? "Level " + c.level : esc(achName[c.ach] || c.ach)) + "</small>" : c.kind === "emotes" ? '<small class="ok">Unlocked</small>' : on ? '<small class="ok">Equipped</small>' : '<button class="btn dark" data-gm="equip" data-k="' + c.kind + '" data-id="' + c.id + '">Equip</button>';
+        return '<div class="gx-item' + (c.owned ? "" : " locked") + (on && c.kind !== "emotes" ? " on" : "") + '">' + preview(c) + "<b>" + esc(c.name) + "</b>" + btn + "</div>";
+      }).join("") + "</div>";
+  }
+  function tierBadge(t) { return '<span class="gx-tier t-' + (t || "Bronze").toLowerCase() + '">' + esc(t || "Bronze") + "</span>"; }
+  function competePage() {
+    var games = RANKED_GAMES.filter(has); if (games.indexOf(S.lgame) < 0) S.lgame = games[0];
+    var L = S.ladders[S.lgame];
+    if (!L && !S.__lreq) { S.__lreq = 1; setTimeout(function () { S.__lreq = 0; send({ t: "ladder", game: S.lgame }); }, 0); }
+    var me = L ? L.me : { rating: 1000, games: 0, wins: 0, tier: "Bronze" };
+    var rows = L && L.rows.length ? L.rows.map(function (r, i) { return '<li class="' + (r.id === S.you ? "me" : "") + '"><span class="rk">' + (i + 1) + '</span><span class="nm">' + esc(r.name) + "</span>" + tierBadge(r.tier) + '<span class="w">' + r.rating + '</span><span class="pl">' + r.wins + "W · " + r.games + " games</span></li>"; }).join("") : '<li class="empty">No ranked games this season yet. Be the first!</li>';
+    var ranked = '<div class="sh"><h3>Ranked</h3><span class="gx-reset">Season ' + esc((L && L.season) || (S.me && S.me.season) || "") + " · resets monthly</span></div>" +
+      '<div class="gx-cats">' + games.map(function (g) { return '<button class="gx-cat' + (S.lgame === g ? " on" : "") + '" data-gm="lgame" data-g="' + g + '">' + gname(g) + "</button>"; }).join("") + "</div>" +
+      '<div class="gx-rk"><div class="panel gx-mine">' + art(S.lgame, true) + '<div><small>Your ' + esc(gname(S.lgame)) + ' rating</small><b>' + me.rating + "</b>" + tierBadge(me.tier) + '<span>' + me.wins + " wins · " + me.games + ' ranked games</span></div><button class="btn primary" data-gm="rq" data-g="' + S.lgame + '">⚔️ Find ranked match</button><p class="muted">Quick matches against other players count as ranked. You can also switch on <b>Ranked</b> in a 1-on-1 table\'s rules.</p></div>' +
+      '<div class="panel"><ol class="lb">' + rows + "</ol></div></div>";
+    var create = '<div class="panel gx-tnew"><b>Host a tournament</b><select id="gx-tg">' + TOUR_GAMES.filter(has).map(function (g) { return "<option value=\"" + g + "\">" + gname(g) + "</option>"; }).join("") + '</select><select id="gx-ts"><option value="4">4 players</option><option value="8" selected>8 players</option><option value="16">16 players</option></select><input id="gx-tn" maxlength="40" placeholder="Name (optional)"><button class="btn primary" data-gm="tcreate">Create</button></div>';
+    var list = S.tours.length ? S.tours.map(tourCard).join("") : '<p class="muted">No tournaments on this server yet. Host one and everyone here gets notified.</p>';
+    return '<div class="gx-compete">' + ranked + '<div class="sh"><h3>Tournaments</h3><span class="gx-reset">This server</span></div>' + create + '<div class="gx-tours">' + list + "</div></div>";
+  }
+  function pname(t, id) { var p = t.players.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id ? "?" : "Bye"; }
+  function tourCard(t) {
+    var mine = t.players.some(function (p) { return p.id === S.you; }), host = t.host === S.you, btns = "";
+    if (t.status === "open") btns = (mine ? '<button class="btn dark" data-gm="tleave" data-id="' + t.id + '">' + (host ? "Cancel" : "Leave") + "</button>" : t.players.length < t.size ? '<button class="btn primary" data-gm="tjoin" data-id="' + t.id + '">Join</button>' : "") + (host ? '<button class="btn primary" data-gm="tstart" data-id="' + t.id + '"' + (t.players.length < 2 ? " disabled" : "") + ">Start</button>" : "");
+    var ri = t.rounds.length - 1, myM = ri >= 0 && t.status === "running" ? t.rounds[ri].filter(function (m) { return !m.w && (m.a === S.you || m.b === S.you) && m.a && m.b; })[0] : null;
+    if (myM) btns = '<button class="btn primary" data-gm="tplay" data-id="' + t.id + '">▶ Play your match</button>';
+    var bracket = t.rounds.length ? '<div class="gx-br">' + t.rounds.map(function (r, i) { return '<div class="col"><small>' + (i === t.rounds.length - 1 && t.status === "done" ? "Final" : "Round " + (i + 1)) + "</small>" + r.map(function (m) {
+      var cls = function (id) { return (m.w && m.w === id ? "w" : m.w ? "l" : "") + (id === S.you ? " me" : ""); };
+      return '<div class="m"><span class="' + cls(m.a) + '">' + esc(pname(t, m.a)) + '</span><span class="' + cls(m.b) + '">' + esc(pname(t, m.b)) + "</span></div>"; }).join("") + "</div>"; }).join("") +
+      (t.champion ? '<div class="col champ"><small>Champion</small><div class="m"><span class="w">🏆 ' + esc(pname(t, t.champion)) + "</span></div></div>" : "") + "</div>" : "";
+    var st = t.status === "open" ? "Sign-ups open · " + t.players.length + "/" + t.size : t.status === "running" ? "● Round " + t.rounds.length + " in progress" : "Finished";
+    return '<div class="panel gx-tour s-' + t.status + '"><div class="gx-th">' + art(t.game, true) + '<div><b>' + esc(t.name) + "</b><span>" + esc(t.gameName) + " · hosted by " + esc(t.hostName) + " · " + st + '</span></div><div class="gx-tbtn">' + btns + "</div></div>" +
+      (t.status === "open" ? '<div class="gx-who">' + t.players.map(function (p) { return '<span class="gx-chip">' + esc(p.name) + "</span>"; }).join("") + "</div>" : "") + bracket + "</div>";
+  }
+  var basePage = page;
+  page = function () {
+    if (S.view === "compete") return competePage();
+    var h = basePage.apply(this, arguments), p = S.me;
+    if (!p) return h;
+    if (S.view === "home") {
+      var i = h.indexOf('<div class="panel daily">'), j = h.indexOf('<div class="panel recent">');
+      if (i >= 0 && j > i) h = h.slice(0, i) + dailyPanel(p, true) + h.slice(j);
+    }
+    if (S.view === "profile") {
+      var k = h.indexOf('<h3 class="sec">Per game</h3>');
+      var ranks = p.ranks && Object.keys(p.ranks).length ? '<div class="sh"><h3>Ranked this season</h3></div><div class="gx-myranks">' + Object.keys(p.ranks).map(function (g) { var r = p.ranks[g]; return '<div class="panel">' + art(g, true) + "<div><b>" + esc(gname(g)) + "</b><span>" + r.rating + " · " + r.wins + "W / " + r.games + "</span></div>" + tierBadge(r.tier) + "</div>"; }).join("") + "</div>" : "";
+      var extra = dailyPanel(p) + achPanel(p) + lockerPanel(p) + ranks;
+      h = k >= 0 ? h.slice(0, k) + extra + h.slice(k) : h + extra;
+    }
+    return h;
+  };
+
+  // ===== lobby rules =====
+  var OPT = {
+    turn: ["Turn timer", { normal: "Normal", fast: "Fast", relaxed: "Relaxed", off: "Off" }], ranked: ["Ranked", { "false": "Off", "true": "On" }],
+    stack: ["Stack +2 / +4", { "false": "Off", "true": "On" }], drawTo: ["Draw until you can play", { "false": "Off", "true": "On" }],
+    rounds: ["Rounds", null], pack: ["Word pack", { classic: "Classic", animals: "Animals", food: "Food", objects: "Things", hard: "Hard", deutsch: "Deutsch" }],
+    count: ["Questions", null], target: ["Play to", null, " points"], lives: ["Lives", null], len: ["Text length", { short: "Short", medium: "Medium", long: "Long" }],
+    time: ["Round length", null, " s"], size: ["Board", { small: "Small", medium: "Medium", large: "Large" }], points: ["Match to", null, " pt"],
+  };
+  function rulesPanel(g) {
+    if (!g.optSchema) return "";
+    var host = g.seats.length && g.hostId === S.you, keys = Object.keys(g.optSchema);
+    return '<div class="gx-rules"><div class="gx-rh">⚙️ Rules' + (host ? "" : ' <small>set by the host</small>') + "</div>" + keys.map(function (k) {
+      var d = OPT[k] || [k, null], vals = g.optSchema[k];
+      return '<div class="gx-rr"><span>' + d[0] + "</span><div>" + vals.map(function (v) {
+        var lab = d[1] ? d[1][String(v)] || String(v) : String(v) + (d[2] || "");
+        var on = g.opts && g.opts[k] === v;
+        return host ? '<button class="gx-ro' + (on ? " on" : "") + '" data-gm="opt" data-k="' + k + '" data-v=\'' + JSON.stringify(v) + "'>" + lab + "</button>" : on ? '<b class="gx-ro on">' + lab + "</b>" : "";
+      }).join("") + "</div></div>";
+    }).join("") + "</div>";
+  }
+  var baseLobby = lobby;
+  lobby = function (g) {
+    var h = baseLobby(g);
+    if (g.tour) return h.replace('<div class="actions">', '<p class="gx-tl8">🏆 Tournament match: it starts when both players are here.</p><div class="actions">');
+    var i = h.lastIndexOf("</div>");
+    return h.slice(0, i) + rulesPanel(g) + h.slice(i);
+  };
+  var baseScreen = gameScreen;
+  gameScreen = function (g) {
+    var h = baseScreen(g);
+    if (g.phase !== "lobby" && (g.ranked || g.tour)) h = h.replace("</h2>", '<span class="gx-rb">' + (g.tour ? "🏆 Tournament" : "⚔️ Ranked") + "</span></h2>");
+    return h;
+  };
+
+  // ===== clicks =====
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-gm]"); if (!el || el.disabled) return;
+    var a = el.getAttribute("data-gm"), id = el.getAttribute("data-id");
+    if (a === "locker") { S.locker = el.getAttribute("data-k"); render(); }
+    else if (a === "equip") send({ t: "equip", kind: el.getAttribute("data-k"), id: id });
+    else if (a === "lgame") { S.lgame = el.getAttribute("data-g"); send({ t: "ladder", game: S.lgame }); render(); }
+    else if (a === "rq") { send({ t: "qm", game: el.getAttribute("data-g") }); toast("Looking for a ranked opponent… you'll be moved when one is found"); }
+    else if (a === "tcreate") { var gEl = document.getElementById("gx-tg"), sEl = document.getElementById("gx-ts"), nEl = document.getElementById("gx-tn"); send({ t: "tcreate", game: gEl.value, size: +sEl.value, name: nEl.value }); }
+    else if (a === "tjoin" || a === "tleave" || a === "tstart") send({ t: a, id: id });
+    else if (a === "tplay") { send({ t: "tplay", id: id }); S.tmatch = null; drawTmatch(); }
+    else if (a === "tmx") { S.tmatch = null; drawTmatch(); }
+    else if (a === "opt") { var o = {}; o[el.getAttribute("data-k")] = JSON.parse(el.getAttribute("data-v")); send({ t: "opts", o: o }); }
+  });
+  app.addEventListener("click", function (e) { var el = e.target.closest('[data-act="nav"][data-view="compete"]'); if (el) send({ t: "tlist" }); }, true);
+  var baseRender = render;
+  render = function () {
+    baseRender.apply(this, arguments);
+    try { drawTmatch(); var h2 = app.querySelector(".top h2"); if (h2 && S.view === "compete" && !gameShown()) h2.textContent = "Compete"; } catch (er) {}
+  };
+  window.__gxToast = toastBig;
+})();
+
 // ---------- GAM.IO fit: the activity fills the window like an app, on any screen size (loads last) ----------
 (function () {
   // 1) big screens: scale the whole interface up so it doesn't look like a small website in a huge window
@@ -744,6 +957,192 @@ const JS: string = String.raw`// ---------- GAM.IO pack: tables + invites, turn 
   window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { rootZoom(); render(); }, 120); });
   rootZoom();
   window.__fitGame = fitGame;
+})();
+
+// ---------- GAM.IO settings: sound, music, reduced motion, colour-blind mode, language (English / Deutsch) ----------
+(function () {
+  var SET = { sound: true, music: false, motion: false, cb: false, lang: "auto" };
+  try { var saved = JSON.parse(localStorage.getItem("gx_settings") || "null"); if (saved) SET = Object.assign(SET, saved); } catch (e) {}
+  var fromServer = false;
+  function lang() { return SET.lang === "auto" ? (/^de\b/i.test(navigator.language || "") ? "de" : "en") : SET.lang; }
+  function apply() {
+    window.__gxMute = !SET.sound; window.__gxVol = SET.sound ? 1 : 0; window.__gxCalm = !!SET.motion;
+    document.body.classList.toggle("gx-calm", !!SET.motion);
+    document.body.classList.toggle("gx-cb", !!SET.cb);
+    document.documentElement.lang = lang();
+    if (SET.music) music.start(); else music.stop();
+  }
+  function save() {
+    try { localStorage.setItem("gx_settings", JSON.stringify(SET)); } catch (e) {}
+    try { send({ t: "settings", s: SET }); } catch (e) {}
+    apply(); render();
+  }
+
+  // ===== background music: a soft generated chord loop (no files to download) =====
+  var music = (function () {
+    var ctx = null, gain = null, timer = null, on = false, step = 0;
+    var CH = [[220, 277.2, 329.6, 415.3], [196, 246.9, 293.7, 370], [174.6, 220, 261.6, 329.6], [196, 246.9, 329.6, 392]];
+    function tick() {
+      if (!on) return;
+      var t = ctx.currentTime, ch = CH[step % CH.length]; step++;
+      ch.forEach(function (f, i) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = i % 2 ? "triangle" : "sine"; o.frequency.value = f / (i === 0 ? 2 : 1);
+        o.connect(g); g.connect(gain);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.06, t + 1.2); g.gain.linearRampToValueAtTime(0, t + 4.2);
+        o.start(t); o.stop(t + 4.4);
+      });
+      // a gentle melody note
+      var m = ctx.createOscillator(), mg = ctx.createGain(); m.type = "sine"; m.frequency.value = ch[1 + (step % 3)] * 2;
+      m.connect(mg); mg.connect(gain); mg.gain.setValueAtTime(0, t + 1); mg.gain.linearRampToValueAtTime(0.025, t + 1.3); mg.gain.exponentialRampToValueAtTime(0.0001, t + 3);
+      m.start(t + 1); m.stop(t + 3.2);
+    }
+    return {
+      start: function () {
+        if (on) return;
+        try {
+          ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+          if (!gain) { gain = ctx.createGain(); var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400; gain.connect(lp); lp.connect(ctx.destination); }
+          gain.gain.value = 0.6; on = true; if (ctx.state === "suspended") ctx.resume(); tick(); timer = setInterval(tick, 4000);
+        } catch (e) {}
+      },
+      stop: function () { on = false; clearInterval(timer); if (gain) gain.gain.value = 0; },
+    };
+  })();
+  // browsers only allow sound after a tap, so start music on the first click if it's switched on
+  document.addEventListener("pointerdown", function () { if (SET.music) music.start(); }, { once: true });
+
+  // ===== settings panel =====
+  var open = false;
+  function row(key, title, sub) { return '<label class="gx-set"><div><b>' + title + "</b><small>" + sub + '</small></div><button class="gx-sw' + (SET[key] ? " on" : "") + '" data-gs="tog" data-k="' + key + '"><i></i></button></label>'; }
+  function panel() {
+    if (!open) return "";
+    return '<div class="modal gx-setm" data-gs="bg"><div class="box"><h2>Settings</h2>' +
+      row("sound", "Sound effects", "Chimes for your turn, invites and rewards") +
+      row("music", "Music", "Soft background music while you play") +
+      row("motion", "Reduce motion", "Turns off flying cards, bursts and other animations") +
+      row("cb", "Colour-blind mode", "Adds shapes to card and piece colours") +
+      '<div class="gx-set"><div><b>Language</b><small>Sprache</small></div><div class="gx-langs">' + [["auto", "Auto"], ["en", "English"], ["de", "Deutsch"]].map(function (l) { return '<button class="gx-ro' + (SET.lang === l[0] ? " on" : "") + '" data-gs="lang" data-l="' + l[0] + '">' + l[1] + "</button>"; }).join("") + "</div></div>" +
+      '<button class="btn primary" data-gs="close">Done</button></div></div>';
+  }
+  function drawPanel() {
+    var el = document.getElementById("gx-setp"); if (!el) { el = document.createElement("div"); el.id = "gx-setp"; document.body.appendChild(el); }
+    el.innerHTML = panel(); translate(el);
+  }
+  var GEAR = '<svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9 4.6v-2.2l-2.4-.5a7 7 0 0 0-.7-1.7l1.4-2-1.6-1.6-2 1.4a7 7 0 0 0-1.7-.7L13.5 3h-2.2l-.5 2.4a7 7 0 0 0-1.7.7l-2-1.4-1.6 1.6 1.4 2a7 7 0 0 0-.7 1.7L3 10.9v2.2l2.4.5c.2.6.4 1.2.7 1.7l-1.4 2 1.6 1.6 2-1.4c.5.3 1.1.5 1.7.7l.5 2.4h2.2l.5-2.4c.6-.2 1.2-.4 1.7-.7l2 1.4 1.6-1.6-1.4-2c.3-.5.5-1.1.7-1.7z"/></svg>';
+  var baseSide = sidebar;
+  sidebar = function () { return baseSide.apply(this, arguments).replace('</nav>', '<button class="ni" data-gs="open">' + GEAR + "<span>Settings</span></button></nav>"); };
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-gs]"); if (!el) return;
+    var a = el.getAttribute("data-gs");
+    if (a === "bg" && e.target !== el) return;
+    e.preventDefault();
+    if (a === "open") { open = true; drawPanel(); }
+    else if (a === "close" || a === "bg") { open = false; drawPanel(); }
+    else if (a === "tog") { var k = el.getAttribute("data-k"); SET[k] = !SET[k]; save(); drawPanel(); }
+    else if (a === "lang") { SET.lang = el.getAttribute("data-l"); save(); drawPanel(); }
+  });
+  // phones: a gear in the top bar
+  var baseRender = render;
+  render = function () {
+    if (!fromServer && S.me && S.me.settings && Object.keys(S.me.settings).length && !localStorage.getItem("gx_settings")) { fromServer = true; SET = Object.assign(SET, S.me.settings); apply(); }
+    baseRender.apply(this, arguments);
+    try {
+      var top = app.querySelector(".top .me"); if (top && !top.querySelector(".gx-gear")) top.insertAdjacentHTML("beforebegin", '<button class="gx-gear" data-gs="open" aria-label="Settings">' + GEAR + "</button>");
+      if (SET.cb) app.querySelectorAll(".c4 .disc").forEach(function (d) { var c = d.style.getPropertyValue("--pc").trim(); d.setAttribute("data-cb", c === COLORS[0] ? "●" : "✕"); });
+    } catch (er) {}
+  };
+
+  // ===== German =====
+  var DE = {
+    "Home": "Start", "Games": "Spiele", "Compete": "Wettkampf", "Leaderboard": "Bestenliste", "Profile": "Profil", "Settings": "Einstellungen", "Done": "Fertig",
+    "All games": "Alle Spiele", "Your profile": "Dein Profil", "In this call": "In diesem Anruf", "Invite Friends": "Freunde einladen", "Invite": "Einladen",
+    "Your next game": "Dein nächstes Spiel", "starts here.": "beginnt hier.", "Pick a game and play together with everyone in your call.": "Such dir ein Spiel aus und spiel mit allen in deinem Anruf.",
+    "Play with friends": "Mit Freunden spielen", "Quick match": "Schnelles Spiel", "Featured games": "Empfohlene Spiele", "View all →": "Alle ansehen →", "See all →": "Alle ansehen →",
+    "Your Recent Games": "Deine letzten Spiele", "Your games will show up here.": "Deine Spiele erscheinen hier.", "Reach new levels!": "Erreiche neue Level!", "View Profile": "Profil ansehen",
+    "Earn XP every game, win to level up and climb the leaderboard.": "Sammle in jedem Spiel XP, gewinne, steig im Level auf und klettere in der Bestenliste.",
+    "Hanging out": "Chillt", "Rookie": "Neuling", "Rising Star": "Aufsteiger", "Pro": "Profi", "Champion": "Champion", "Legend": "Legende",
+    "Tables in this call": "Tische in diesem Anruf", "Join": "Beitreten", "Watch": "Zuschauen", "Return": "Zurück", "● Playing": "● Läuft", "Finished": "Beendet",
+    "All": "Alle", "Cards": "Karten", "Party": "Party", "Strategy": "Strategie", "Classic": "Klassisch", "Dice & Board": "Würfel & Brett", "Word & Quiz": "Wort & Quiz", "Arcade": "Arcade", "Board": "Brett", "Dice": "Würfel", "Word": "Wort", "Quiz": "Quiz", "Sports": "Sport",
+    "Popular": "Beliebt", "Hot": "Heiß", "New": "Neu",
+    "Chess": "Schach", "Checkers": "Dame", "Connect 4": "Vier gewinnt", "Dots & Boxes": "Käsekästchen", "Sea Battle": "Schiffe versenken", "Draw & Guess": "Zeichnen & Raten", "Word Hunt": "Wortjagd",
+    "Lucky Dice": "Glückswürfel", "Liar's Dice": "Lügenwürfel", "Cheat": "Mogeln", "Who's the Spy?": "Wer ist der Spion?", "Tic-Tac-Toe": "Tic-Tac-Toe", "Ultimate Tic-Tac-Toe": "Ultimate Tic-Tac-Toe",
+    "Hold'em Poker": "Hold'em Poker", "8-Ball Pool": "8-Ball Billard", "Crazy 8s": "Verrückte 8", "Hearts": "Hearts", "Spades": "Spades", "Bomb Party": "Bombenparty", "Typing Race": "Tipp-Rennen", "Backgammon": "Backgammon", "Gin Rummy": "Gin Rommé", "Minesweeper Battle": "Minensucher-Duell", "Snake Party": "Snake-Party",
+    "← Back": "← Zurück", "← Leave": "← Verlassen", "← Games": "← Spiele", "Back": "Zurück", "Leave": "Verlassen", "Resign": "Aufgeben", "Tap Resign again to give up": "Tippe nochmal auf Aufgeben",
+    "Leave seat": "Platz verlassen", "Start game": "Spiel starten", "Join game": "Mitspielen", "Waiting for players…": "Warte auf Spieler…", "Host": "Gastgeber", "Computer": "Computer", "Open seat": "Freier Platz",
+    "🤖 Play against the computer:": "🤖 Gegen den Computer spielen:", "Easy": "Leicht", "Medium": "Mittel", "Hard": "Schwer",
+    "Who can join?": "Wer darf beitreten?", "This call": "Dieser Anruf", "My server": "Mein Server", "Everyone": "Alle",
+    "⚙️ Rules": "⚙️ Regeln", "set by the host": "legt der Gastgeber fest", "Turn timer": "Zugzeit", "Normal": "Normal", "Fast": "Schnell", "Relaxed": "Entspannt", "Off": "Aus", "On": "An",
+    "Ranked": "Gewertet", "Stack +2 / +4": "+2 / +4 stapeln", "Draw until you can play": "Ziehen, bis du legen kannst", "Rounds": "Runden", "Word pack": "Wortpaket", "Animals": "Tiere", "Food": "Essen", "Things": "Dinge",
+    "Questions": "Fragen", "Play to": "Spielen bis", "Lives": "Leben", "Text length": "Textlänge", "Short": "Kurz", "Long": "Lang", "Round length": "Rundenlänge", "Small": "Klein", "Large": "Groß", "Match to": "Match bis",
+    "Your turn": "Du bist dran", "YOUR TURN": "DU BIST DRAN", "Play again": "Nochmal spielen", "Back to games": "Zurück zu den Spielen", "See table": "Tisch ansehen", "You win!": "Du gewinnst!", "Game over": "Spiel vorbei", "Spectating": "Zuschauer",
+    "Pass": "Passen", "Pick a color": "Wähle eine Farbe", "Cancel": "Abbrechen", "Red": "Rot", "Green": "Grün", "Blue": "Blau", "Yellow": "Gelb",
+    "Your turn! Match the color or symbol, or draw": "Du bist dran! Passe Farbe oder Symbol an, oder ziehe", "Play the card you drew, or pass": "Spiel die gezogene Karte oder passe",
+    "Your move (white)": "Dein Zug (Weiß)", "Your move (black)": "Dein Zug (Schwarz)", "Your turn — tap a column": "Du bist dran: tippe auf eine Spalte", "Your fleet": "Deine Flotte", "Enemy waters": "Feindliche Gewässer",
+    "Shuffle": "Mischen", "Ready": "Bereit", "Place your fleet — shuffle until you like it, then lock in": "Platziere deine Flotte: mische, bis sie dir gefällt, dann bestätige",
+    "Daily challenges": "Tägliche Herausforderungen", "Achievements": "Erfolge", "Locker": "Spind", "Card backs": "Kartenrücken", "Board themes": "Brett-Designs", "Profile frames": "Profilrahmen", "Emote packs": "Emote-Pakete",
+    "Equip": "Ausrüsten", "Equipped": "Ausgerüstet", "Unlocked": "Freigeschaltet", "Per game": "Pro Spiel", "Wins": "Siege", "Played": "Gespielt", "Total XP": "XP gesamt",
+    "Play 5 games": "Spiele 5 Partien", "Win 3 games": "Gewinne 3 Partien", "Play 3 different games": "Spiele 3 verschiedene Spiele", "Win a card game": "Gewinne ein Kartenspiel", "Win a board game": "Gewinne ein Brettspiel",
+    "Play 2 party games": "Spiele 2 Partyspiele", "Play 2 games with friends": "Spiele 2 Partien mit Freunden", "Beat a Hard bot": "Besiege einen schweren Bot", "Win a dice or arcade game": "Gewinne ein Würfel- oder Arcadespiel", "Play a ranked match": "Spiele ein gewertetes Match",
+    "First Victory": "Erster Sieg", "Win your first game": "Gewinne dein erstes Spiel", "Winner": "Gewinner", "Win 10 games": "Gewinne 10 Spiele", "Veteran": "Veteran", "Win 50 games": "Gewinne 50 Spiele", "Win 100 games": "Gewinne 100 Spiele",
+    "Regular": "Stammgast", "Play 25 games": "Spiele 25 Partien", "Explorer": "Entdecker", "Play 10 different games": "Spiele 10 verschiedene Spiele", "Completionist": "Komplettierer", "Play every game at least once": "Spiele jedes Spiel mindestens einmal",
+    "All-Rounder": "Allrounder", "Win a card, board, party and arcade game": "Gewinne ein Karten-, Brett-, Party- und Arcadespiel", "Bot Slayer": "Bot-Bezwinger", "Machine Breaker": "Maschinenbrecher", "Beat Hard bots 10 times": "Besiege 10-mal schwere Bots",
+    "Hot Streak": "Siegesserie", "Win 3 games in a row": "Gewinne 3 Spiele in Folge", "Unstoppable": "Unaufhaltsam", "Win 5 games in a row": "Gewinne 5 Spiele in Folge", "Social Butterfly": "Geselliger Typ", "Play with 5 different people": "Spiele mit 5 verschiedenen Leuten",
+    "Host with the Most": "Bester Gastgeber", "Open 10 tables": "Eröffne 10 Tische", "Daily Grind": "Täglicher Fleiß", "Finish all 3 daily challenges": "Schließe alle 3 Tagesaufgaben ab", "Dedicated": "Hingebungsvoll", "Finish the daily challenges on 7 days": "Schließe die Tagesaufgaben an 7 Tagen ab",
+    "Contender": "Herausforderer", "Gold Rank": "Goldrang", "Reach 1400 rating in any ranked game": "Erreiche 1400 Wertung in einem gewerteten Spiel", "Diamond Rank": "Diamantrang", "Reach 1550 rating in any ranked game": "Erreiche 1550 Wertung in einem gewerteten Spiel",
+    "Win a tournament": "Gewinne ein Turnier", "Double Digits": "Zweistellig", "Reach level 10": "Erreiche Level 10",
+    "Tournaments": "Turniere", "This server": "Dieser Server", "Host a tournament": "Turnier veranstalten", "Create": "Erstellen", "4 players": "4 Spieler", "8 players": "8 Spieler", "16 players": "16 Spieler", "Name (optional)": "Name (optional)",
+    "Start": "Starten", "▶ Play your match": "▶ Spiel dein Match", "Final": "Finale", "Champion": "Champion", "Bye": "Freilos", "⚔️ Find ranked match": "⚔️ Gewertetes Match suchen", "⚔️ Ranked": "⚔️ Gewertet", "🏆 Tournament": "🏆 Turnier",
+    "No tournaments on this server yet. Host one and everyone here gets notified.": "Auf diesem Server gibt es noch keine Turniere. Veranstalte eins, dann bekommen alle hier Bescheid.", "No ranked games this season yet. Be the first!": "Diese Saison gab es noch keine gewerteten Spiele. Sei der Erste!",
+    "Ranked this season": "Gewertet in dieser Saison", "Sound effects": "Soundeffekte", "Music": "Musik", "Reduce motion": "Weniger Bewegung", "Colour-blind mode": "Farbenblind-Modus", "Language": "Sprache",
+    "Chimes for your turn, invites and rewards": "Töne für deinen Zug, Einladungen und Belohnungen", "Soft background music while you play": "Leise Hintergrundmusik beim Spielen",
+    "Turns off flying cards, bursts and other animations": "Schaltet fliegende Karten, Effekte und andere Animationen aus", "Adds shapes to card and piece colours": "Fügt Karten- und Steinfarben Formen hinzu",
+    "Daily challenge done": "Tagesaufgabe geschafft", "All daily challenges done!": "Alle Tagesaufgaben geschafft!", "You levelled up": "Du bist aufgestiegen", "Spectate": "Zuschauen",
+    "Pick a game to open your own table. Everyone in the call gets an invite, and several tables can run at once.": "Wähle ein Spiel, um deinen eigenen Tisch zu eröffnen. Alle im Anruf bekommen eine Einladung, und mehrere Tische können gleichzeitig laufen.",
+    "💡 Pick a game to open your own table. Everyone in the call gets an invite, and several tables can run at once.": "💡 Wähle ein Spiel, um deinen eigenen Tisch zu eröffnen. Alle im Anruf bekommen eine Einladung, und mehrere Tische können gleichzeitig laufen.",
+    "share the call and wait for friends to join": "teile den Anruf und warte auf Freunde", "a seat is open — jump in!": "ein Platz ist frei, spring rein!",
+    "Your Recent Games": "Deine letzten Spiele", "Find ranked match": "Gewertetes Match suchen", "Play your match": "Spiel dein Match", "Tournament": "Turnier",
+    "Match the color or symbol. ⊘ skips, ⇄ reverses, +2 and +4 make the next player draw. First to empty their hand wins.": "Passe Farbe oder Symbol an. ⊘ setzt aus, ⇄ dreht um, +2 und +4 lassen den Nächsten ziehen. Wer zuerst keine Karten mehr hat, gewinnt.",
+    "Type your guess...": "Dein Tipp...", "Type your guess…": "Dein Tipp…", "Undo": "Rückgängig", "Clear": "Löschen", "↶ Undo": "↶ Rückgängig", "🗑 Clear": "🗑 Löschen",
+  };
+  var RX = [
+    [/^Waiting for (.+)…$/, "Warte auf $1…"], [/^(.+) wins!$/, "$1 gewinnt!"], [/^(.+) opened a$/, "$1 hat einen"], [/^ table$/, " Tisch eröffnet"],
+    [/^Level (\d+)$/, "Level $1"], [/^(\d+) wins · (\d+) played$/, "$1 Siege · $2 gespielt"], [/^Resets in (.+)$/, "Neu in $1"], [/^In call · (\d+)$/, "Im Anruf · $1"],
+    [/^Open · (\d+)\/(\d+) seats$/, "Offen · $1/$2 Plätze"], [/^(\d+) players · (.+)$/, "$1 Spieler · $2"], [/^(\d+)–(\d+) players · (.+)$/, "$1–$2 Spieler · $3"],
+    [/^Round (\d+)$/, "Runde $1"], [/^Sign-ups open · (\d+)\/(\d+)$/, "Anmeldung offen · $1/$2"], [/^● Round (\d+) in progress$/, "● Runde $1 läuft"],
+    [/^(.+) ran out of time, so a move was made for them$/, "$1 hatte keine Zeit mehr, also wurde für sie gezogen"], [/^(.+) left, so a bot took over their seat$/, "$1 ist gegangen, ein Bot hat den Platz übernommen"],
+    [/^(\d+) \/ (\d+) XP$/, "$1 / $2 XP"], [/^Your (.+) rating$/, "Deine $1-Wertung"], [/^(\d+) wins · (\d+) ranked games$/, "$1 Siege · $2 gewertete Spiele"],
+    [/^🎁 Finish all three for a \+(\d+) XP bonus$/, "🎁 Schaffe alle drei für +$1 XP Bonus"], [/^🎉 All done! Bonus \+(\d+) XP collected$/, "🎉 Alles geschafft! +$1 XP Bonus kassiert"],
+    [/^\+(\d+) is coming your way! Stack another, or draw (\d+)$/, "+$1 kommt auf dich zu! Leg noch eine drauf oder zieh $2"], [/^You're at the$/, "Du bist am"],
+    [/^Season (.+) · resets monthly$/, "Saison $1 · monatlicher Reset"], [/^Level (\d+)!$/, "Level $1!"], [/^New (.+) unlocked$/, "Neues Item freigeschaltet"],
+  ];
+  function tr(t) {
+    var k = t.trim(); if (!k) return null;
+    if (DE.hasOwnProperty(k)) return t.replace(k, DE[k]);
+    var m = k.match(/^([^A-Za-z0-9]+)(.+)$/); // leading icons, arrows or spaces
+    if (m && DE.hasOwnProperty(m[2].trim())) return t.replace(k, m[1] + DE[m[2].trim()]);
+    for (var i = 0; i < RX.length; i++) if (RX[i][0].test(k)) return t.replace(k, k.replace(RX[i][0], RX[i][1]));
+    return null;
+  }
+  var busy = false;
+  function translate(root) {
+    if (lang() !== "de" || !root) return;
+    busy = true;
+    try {
+      var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode; return p && /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } }), n, list = [];
+      while ((n = w.nextNode())) list.push(n);
+      list.forEach(function (x) { var r = tr(x.nodeValue); if (r != null && r !== x.nodeValue) x.nodeValue = r; });
+      (root.querySelectorAll ? root.querySelectorAll("[placeholder],[title]") : []).forEach(function (el) { ["placeholder", "title"].forEach(function (a) { var v = el.getAttribute(a); if (v) { var r = tr(v); if (r != null) el.setAttribute(a, r); } }); });
+    } catch (e) {}
+    busy = false;
+  }
+  new MutationObserver(function (muts) {
+    if (busy || lang() !== "de") return;
+    muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) translate(n); else if (n.nodeType === 3) { var r = tr(n.nodeValue); if (r != null && r !== n.nodeValue) { busy = true; n.nodeValue = r; busy = false; } } }); });
+  }).observe(document.body, { childList: true, subtree: true });
+  window.__gxT = function (s) { return lang() === "de" ? tr(s) || s : s; };
+  apply();
+  setTimeout(function () { translate(document.body); }, 0);
 })();
 `;
 const CSS: string = String.raw`/* ================= GAM.IO pack (loads last) ================= */
@@ -903,6 +1302,7 @@ body.gx-myturn .plc.turn{animation:gx-chip 1.2s ease-in-out infinite}
   .gx-burst{font-size:46px}
   #gx-inv{top:auto;bottom:80px;right:8px;left:8px;max-width:none}
 }
+.jpend{position:absolute;right:-64px;top:-14px;font-size:30px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ff3b4f,#b3123a);border-radius:16px;padding:4px 12px;box-shadow:0 0 22px #ff3b4f;animation:gx-blink .8s infinite}
 
 /* ================= GAM.IO look: logos, cards, pages (loads last) ================= */
 html{background:#0f0c29}body{background-attachment:fixed!important}
@@ -1000,6 +1400,132 @@ html{background:#0f0c29}body{background-attachment:fixed!important}
 }
 .tag.t-new{display:none}
 
+/* ================= GAM.IO progression UI ================= */
+/* toasts */
+#gx-notes{position:fixed;right:16px;bottom:96px;z-index:97;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none}
+.gx-note{display:flex;align-items:center;gap:12px;min-width:280px;max-width:min(380px,92vw);padding:12px 16px 12px 12px;border-radius:18px;background:linear-gradient(135deg,#3a2794f5,#1d1452f5);border:1px solid #ffd84d88;box-shadow:0 14px 34px #000a,0 0 30px #ffc83d33;animation:gx-noteIn .5s cubic-bezier(.2,.9,.3,1.3);transition:opacity .4s,transform .4s}
+.gx-note.out{opacity:0;transform:translateX(40px)}
+.gx-note>i{font-style:normal;font-size:30px;width:48px;height:48px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:14px;background:radial-gradient(circle,#ffd84d55,#ffd84d11);animation:gx-spinIn .7s ease-out}
+.gx-note b{display:block;font-size:15px}.gx-note span{font-size:12px;color:#d9d0ff}
+.gx-note.k-ach{border-color:#ffd84d}.gx-note.k-unlock{border-color:#4dd4ff}.gx-note.k-level{border-color:#b05cff}.gx-note.k-rank{border-color:#3ddc84}.gx-note.k-tour{border-color:#ff9f43}
+@keyframes gx-noteIn{from{transform:translateX(120%) scale(.9);opacity:0}}
+@keyframes gx-spinIn{from{transform:rotate(-180deg) scale(.2)}}
+#gx-tm{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:96;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:99px;background:linear-gradient(90deg,#ff9f43,#ff4d8d);box-shadow:0 12px 30px #000a;animation:gx-in .4s;max-width:94vw}
+#gx-tm i{font-style:normal;font-size:22px}#gx-tm span{font-size:14px}#gx-tm .btn{padding:7px 16px;background:#fff;color:#7a1d3f}
+/* daily challenges */
+.gx-daily{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.gx-daily .sh{margin:0}
+.gx-reset{font-size:12px;font-weight:800;color:var(--mut)}
+.gx-dc{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center}
+.gx-dc .ck{width:24px;height:24px;border-radius:50%;border:2px solid #ffffff33;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
+.gx-dc.done .ck{background:#3ddc84;border-color:#3ddc84;color:#06301a}
+.gx-dc b{font-size:14px;display:block;margin-bottom:4px}.gx-dc.done b{color:#9fe8b9}
+.gx-dc em{font-style:normal;font-weight:900;font-size:13px}.gx-dc small{font-size:11px;font-weight:800;color:var(--gold);background:#ffd84d1a;border-radius:99px;padding:2px 8px}
+.gx-dc .bar{height:7px}
+.gx-dall{font-size:13px;font-weight:800;color:#ffd84d;background:#ffd84d12;border:1px dashed #ffd84d55;border-radius:12px;padding:8px 12px}
+.gx-dall.done{color:#3ddc84;border-color:#3ddc8455;background:#3ddc8412}
+.row .gx-daily.compact{margin:0}
+/* achievements */
+.gx-achs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:18px}
+.gx-ach{position:relative;padding:12px;border-radius:16px;background:#ffffff08;border:1px solid #ffffff14;display:flex;flex-direction:column;gap:4px;opacity:.75}
+.gx-ach i{font-style:normal;font-size:26px;filter:grayscale(1) opacity(.6)}
+.gx-ach b{font-size:14px}.gx-ach span{font-size:12px;color:var(--mut);min-height:30px}
+.gx-ach small{font-size:11px;color:var(--mut);font-weight:800}.gx-ach .bar{height:6px}
+.gx-ach.on{opacity:1;background:linear-gradient(160deg,#3a2a7a,#221a55);border-color:#ffd84d66;box-shadow:0 0 20px #ffd84d22}
+.gx-ach.on i{filter:none}
+.gx-ach em{font-style:normal;font-size:11px;font-weight:900;color:#ffd84d}
+/* locker */
+.gx-lock{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.gx-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:16px;background:#ffffff08;border:1px solid #ffffff14;text-align:center}
+.gx-item.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 22px #ffd84d33}
+.gx-item.locked>div{filter:grayscale(.8) brightness(.55)}
+.gx-item b{font-size:13px}.gx-item .btn{padding:5px 14px;font-size:12px}
+.gx-item small{font-size:11px;font-weight:800}.gx-item .req{color:var(--mut)}.gx-item .ok{color:#3ddc84}
+.gx-pv-back .card.back{width:52px;height:74px;border-radius:8px}.gx-pv-back .card.back::after{font-size:16px}
+.gx-mini{display:grid!important;grid-template-columns:repeat(4,16px);width:auto!important;padding:0!important;gap:0!important;box-shadow:0 0 0 3px #4a2c17!important;border-radius:4px!important;overflow:hidden}
+.gx-mini .sq{width:16px;height:16px;display:block}
+.gx-pv-frame{height:66px;display:flex;align-items:center}
+.gx-pv-emo{height:66px;display:flex;align-items:center;font-size:20px;letter-spacing:2px}
+.gx-packs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #ffffff1a;padding-top:6px;margin-top:2px}
+/* compete */
+.gx-rk{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:14px;margin-bottom:22px;align-items:start}
+.gx-mine{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.gx-mine>div{display:flex;flex-direction:column;gap:3px}
+.gx-mine .art.sm{width:56px;height:56px}
+.gx-mine small{color:var(--mut);font-weight:800}.gx-mine b{font-size:44px;line-height:1;font-weight:900}
+.gx-mine span{font-size:13px;color:var(--mut)}.gx-mine p{font-size:12px}
+.gx-tier{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;border-radius:99px;padding:3px 9px;color:#1b1442;width:max-content}
+.t-bronze{background:linear-gradient(90deg,#e0a370,#b8733f)}.t-silver{background:linear-gradient(90deg,#f1f3f8,#a9b0c2)}.t-gold{background:linear-gradient(90deg,#ffe27a,#f0a72c)}
+.t-platinum{background:linear-gradient(90deg,#9ff3e9,#4fc0d0)}.t-diamond{background:linear-gradient(90deg,#c6b6ff,#7cc4ff);box-shadow:0 0 12px #9d8bff}
+.lb li.me{background:#ffd84d1a;outline:1px solid #ffd84d55}
+.lb li .gx-tier{margin-left:auto;margin-right:8px}
+.gx-tnew{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.gx-tnew b{margin-right:6px}
+.gx-tnew select,.gx-tnew input{background:#ffffff10;border:1px solid #ffffff22;color:#fff;border-radius:12px;padding:9px 12px;font:inherit;font-weight:700}
+.gx-tnew select option{background:#1d1452}
+.gx-tnew input{flex:1;min-width:140px}
+.gx-tours{display:flex;flex-direction:column;gap:12px}
+.gx-tour{display:flex;flex-direction:column;gap:10px}
+.gx-tour.s-running{border-color:#ff9f4377;box-shadow:0 0 24px #ff9f4322}
+.gx-th{display:flex;align-items:center;gap:12px}.gx-th>div{flex:1;min-width:0;display:flex;flex-direction:column}
+.gx-th .art.sm{width:48px;height:48px}.gx-th span{font-size:12px;color:var(--mut);font-weight:700}
+.gx-br{display:flex;gap:18px;overflow-x:auto;padding:4px 2px 8px}
+.gx-br .col{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:150px}
+.gx-br small{font-size:11px;font-weight:900;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.gx-br .m{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid #ffffff1f;background:#ffffff08}
+.gx-br .m span{padding:6px 10px;font-size:13px;font-weight:700}.gx-br .m span+span{border-top:1px solid #ffffff14}
+.gx-br .m .w{background:#3ddc8422;color:#9fe8b9;font-weight:900}.gx-br .m .l{opacity:.45;text-decoration:line-through}.gx-br .m .me{color:#ffd84d}
+.gx-br .champ .m{border-color:#ffd84d;box-shadow:0 0 18px #ffd84d44}.gx-br .champ .w{background:#ffd84d22;color:#ffd84d}
+.gx-myranks{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:18px}
+.gx-myranks .panel{display:flex;align-items:center;gap:10px;padding:10px}.gx-myranks .panel>div{flex:1;display:flex;flex-direction:column}.gx-myranks span{font-size:12px;color:var(--mut)}
+.gx-myranks .art.sm{width:40px;height:40px}
+/* lobby rules + badges */
+.gx-rules{width:min(620px,100%);margin-top:14px;padding:12px 14px;border-radius:18px;background:#ffffff08;border:1px solid #ffffff14;display:flex;flex-direction:column;gap:8px}
+.gx-rh{font-weight:900;font-size:14px}.gx-rh small{font-weight:700;color:var(--mut);font-size:12px;margin-left:6px}
+.gx-rr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.gx-rr>span{min-width:150px;font-size:13px;font-weight:800;color:#d9d2ff}
+.gx-rr>div{display:flex;gap:6px;flex-wrap:wrap}
+.gx-ro{padding:6px 12px;border-radius:99px;background:#ffffff0d;border:1px solid #ffffff1a;font-size:13px;font-weight:800;color:#d9d2ff}
+.gx-ro.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+.gx-rb{font-size:12px;font-weight:900;margin-left:10px;padding:3px 10px;border-radius:99px;background:linear-gradient(90deg,#ff9f43,#ff4d8d);vertical-align:middle}
+.gx-tl8{font-weight:800;color:#ffb36b}
+/* profile frames */
+.gfr{position:relative;display:inline-flex;border-radius:50%;flex:none}
+.gfr::after{content:"";position:absolute;inset:-4px;border-radius:50%;pointer-events:none}
+.gfr-silver::after{border:3px solid #d9dde8;box-shadow:0 0 8px #ffffff66}
+.gfr-gold::after{border:3px solid #ffd84d;box-shadow:0 0 12px #ffc83d99}
+.gfr-neon::after{border:3px solid #4dd4ff;box-shadow:0 0 12px #4dd4ff,0 0 24px #b05cff88}
+.gfr-rainbow::after{inset:-5px;padding:3px;background:conic-gradient(#ff3b4f,#ffbf1a,#21c45e,#2f7dff,#b05cff,#ff3b4f);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:gx-spin 4s linear infinite}
+.gfr-flame::after{border:3px solid #ff7a2f;box-shadow:0 0 10px #ff7a2f,0 -6px 16px #ffcf4d99;animation:gx-flick 1s ease-in-out infinite alternate}
+@keyframes gx-flick{to{box-shadow:0 0 16px #ff7a2f,0 -10px 22px #ffcf4dcc}}
+.gfr-diamond::after{border:3px solid #c6b6ff;box-shadow:0 0 14px #9d8bff,inset 0 0 6px #fff}
+.gfr-crown::after{border:3px solid #ffd84d;box-shadow:0 0 14px #ffc83d}
+.gfr-crown::before{content:"👑";position:absolute;left:50%;top:calc(var(--fs) * -.42);transform:translateX(-50%) rotate(-8deg);font-size:calc(var(--fs) * .42);z-index:2;filter:drop-shadow(0 2px 2px #0008)}
+/* card backs */
+body.back-ocean .card.back,body.back-ocean .jback,body.back-ocean .jfan i{background:repeating-linear-gradient(45deg,#ffffff14 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,#4dd4ff,#0b3d91 75%)!important}
+body.back-ember .card.back,body.back-ember .jback,body.back-ember .jfan i{background:repeating-linear-gradient(-45deg,#ffffff12 0 5px,transparent 5px 10px),radial-gradient(circle at 50% 60%,#ffcf4d,#ff5a2f 45%,#6b0f1a 90%)!important}
+body.back-galaxy .card.back,body.back-galaxy .jback,body.back-galaxy .jfan i{background:radial-gradient(circle at 30% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 70% 60%,#fff 0 1px,transparent 2px),radial-gradient(circle at 45% 80%,#fff 0 1px,transparent 2px),radial-gradient(ellipse at 40% 40%,#ff6bcb88,transparent 50%),radial-gradient(ellipse at 60% 60%,#4d7bff99,transparent 55%),#140b3a!important}
+body.back-neon .card.back,body.back-neon .jback,body.back-neon .jfan i{background:linear-gradient(#ff4d8d55 1px,transparent 1px) 0 0/10px 10px,linear-gradient(90deg,#4dd4ff55 1px,transparent 1px) 0 0/10px 10px,#0d0a24!important}
+body.back-gold .card.back,body.back-gold .jback,body.back-gold .jfan i{background:repeating-linear-gradient(45deg,#fff3 0 3px,transparent 3px 9px),linear-gradient(135deg,#ffe27a,#c98a12 55%,#7a4a00)!important}
+body.back-royal .card.back,body.back-royal .jback,body.back-royal .jfan i{background:radial-gradient(circle at 50% 50%,#ffd84d 0 14%,transparent 15%),repeating-conic-gradient(#6b1d8f 0 10deg,#4a1266 10deg 20deg)!important}
+/* board themes (chess + checkers + reversi) */
+body.board-marble .chess:not(.checkers) .sq.lt,body.board-marble .gx-mini .sq.lt{background:linear-gradient(135deg,#f7f7fa,#dcdde5)!important}
+body.board-marble .chess:not(.checkers) .sq.dk,body.board-marble .gx-mini .sq.dk{background:linear-gradient(135deg,#7d8597,#525a6b)!important}
+body.board-marble .chess.checkers .sq.lt{background:linear-gradient(135deg,#7d8597,#525a6b)!important}body.board-marble .chess.checkers .sq.dk{background:#ecedf2!important}
+body.board-ocean .chess:not(.checkers) .sq.lt,body.board-ocean .gx-mini .sq.lt{background:#bfe6ff!important}body.board-ocean .chess:not(.checkers) .sq.dk,body.board-ocean .gx-mini .sq.dk{background:#2f7dbf!important}
+body.board-ocean .chess.checkers .sq.lt{background:#2f7dbf!important}body.board-ocean .chess.checkers .sq.dk{background:#bfe6ff!important}body.board-ocean .rv{background:linear-gradient(160deg,#1f6fd1,#0b2f75)!important}
+body.board-neon .chess:not(.checkers) .sq.lt,body.board-neon .gx-mini .sq.lt{background:#2a1f66!important;box-shadow:inset 0 0 0 1px #b05cff55}body.board-neon .chess:not(.checkers) .sq.dk,body.board-neon .gx-mini .sq.dk{background:#120d33!important;box-shadow:inset 0 0 0 1px #4dd4ff44}
+body.board-neon .chess.checkers .sq.lt{background:#120d33!important}body.board-neon .chess.checkers .sq.dk{background:#2a1f66!important}body.board-neon .rv{background:#120d33!important;box-shadow:0 0 0 3px #b05cff,0 0 30px #b05cff88!important}
+body.board-neon .pc.w{-webkit-text-stroke:1.2px #4dd4ff}body.board-neon .pc.b{color:#ff4d8d;-webkit-text-stroke:1px #fff6}
+body.board-candy .chess:not(.checkers) .sq.lt,body.board-candy .gx-mini .sq.lt{background:#ffe0f0!important}body.board-candy .chess:not(.checkers) .sq.dk,body.board-candy .gx-mini .sq.dk{background:#ff8ac4!important}
+body.board-candy .chess.checkers .sq.lt{background:#ff8ac4!important}body.board-candy .chess.checkers .sq.dk{background:#ffe0f0!important}body.board-candy .rv{background:linear-gradient(160deg,#ff8ac4,#c04d8f)!important}
+body.board-obsidian .chess:not(.checkers) .sq.lt,body.board-obsidian .gx-mini .sq.lt{background:linear-gradient(135deg,#4a4a5a,#33333f)!important}body.board-obsidian .chess:not(.checkers) .sq.dk,body.board-obsidian .gx-mini .sq.dk{background:linear-gradient(135deg,#17171f,#0a0a10)!important}
+body.board-obsidian .chess.checkers .sq.lt{background:#0f0f16!important}body.board-obsidian .chess.checkers .sq.dk{background:#3a3a48!important}body.board-obsidian .rv{background:linear-gradient(160deg,#2a2a36,#0a0a10)!important}
+body.board-obsidian .chess:not(.checkers){box-shadow:0 0 0 10px #0a0a10,0 0 0 12px #ffd84d88,0 24px 50px #000a!important}
+@media (max-width:760px){.gx-rk{grid-template-columns:1fr}.gx-rr>span{min-width:100%}#gx-notes{bottom:84px;left:8px;right:8px;align-items:stretch}.gx-note{max-width:none}#gx-tm{top:8px}}
+.gx-mine p b{font-size:inherit;line-height:inherit}
+.row:has(.gx-daily){grid-template-columns:1.35fr 1fr!important}
+@media (max-width:900px){.row:has(.gx-daily){grid-template-columns:1fr!important}}
+
 /* ================= GAM.IO fit: app-style full-window layout ================= */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{margin:0}
@@ -1034,6 +1560,32 @@ body{margin:0}
   .shell{padding:10px;gap:12px}
 }
 @media (max-width:760px){.ghead h2{font-size:18px;white-space:nowrap;gap:8px}.ghead h2 .art.sm{width:34px;height:34px}.ghead .ghost{padding:8px 10px;font-size:14px}}
+
+/* ================= settings ================= */
+.gx-setm .box{width:min(460px,94vw);text-align:left;display:flex;flex-direction:column;gap:12px}
+.gx-setm h2{text-align:center}
+.gx-set{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 12px;border-radius:14px;background:#ffffff08;cursor:pointer}
+.gx-set b{display:block;font-size:15px}.gx-set small{font-size:12px;color:var(--mut)}
+.gx-sw{width:48px;height:28px;border-radius:99px;background:#ffffff22;position:relative;flex:none;transition:background .2s}
+.gx-sw i{position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 2px 6px #0006}
+.gx-sw.on{background:linear-gradient(90deg,var(--acc),var(--acc2))}.gx-sw.on i{transform:translateX(20px)}
+.gx-langs{display:flex;gap:6px}
+.gx-gear{display:none;width:38px;height:38px;border-radius:50%;background:#ffffff10;align-items:center;justify-content:center;margin-right:8px}
+.gx-gear svg,.ni svg{fill:currentColor}.gx-gear svg{width:20px;height:20px}
+@media (max-width:760px),(max-height:500px){.gx-gear{display:inline-flex}}
+.top .me{display:flex}.top{gap:0}
+/* reduced motion */
+body.gx-calm *,body.gx-calm *::before,body.gx-calm *::after{animation:none!important;transition:none!important}
+body.gx-calm.gx-myturn::after{opacity:1}
+/* colour-blind shapes */
+body.gx-cb .jc.jR::after,body.gx-cb .jc.jG::after,body.gx-cb .jc.jB::after,body.gx-cb .jc.jY::after{position:absolute;right:calc(var(--cw) * .09);top:calc(var(--cw) * .07);font-size:calc(var(--cw) * .17);color:#fff;text-shadow:0 1px 2px #000a;z-index:2}
+body.gx-cb .jc.jR::after{content:"▲"}body.gx-cb .jc.jG::after{content:"■"}body.gx-cb .jc.jB::after{content:"●"}body.gx-cb .jc.jY::after{content:"★"}
+body.gx-cb .jcol.jR::before{content:"▲ "}body.gx-cb .jcol.jG::before{content:"■ "}body.gx-cb .jcol.jB::before{content:"● "}body.gx-cb .jcol.jY::before{content:"★ "}
+body.gx-cb .jwheel .jR::before{content:"▲ "}body.gx-cb .jwheel .jG::before{content:"■ "}body.gx-cb .jwheel .jB::before{content:"● "}body.gx-cb .jwheel .jY::before{content:"★ "}
+body.gx-cb .c4 .disc[data-cb]::after{content:attr(data-cb);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:60%;font-weight:900;color:#000a}
+body.gx-cb .c4 .disc{position:relative}
+body.gx-cb .tok.c0::after,body.gx-cb .tok.c1::after,body.gx-cb .tok.c2::after,body.gx-cb .tok.c3::after{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
+body.gx-cb .tok.c0::after{content:"▲"}body.gx-cb .tok.c1::after{content:"■"}body.gx-cb .tok.c2::after{content:"●"}body.gx-cb .tok.c3::after{content:"★"}
 `;
 const h = (t: string) => new Bun.CryptoHasher("sha256").update(t).digest("hex").slice(0, 16);
 Bun.serve({

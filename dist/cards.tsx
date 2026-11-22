@@ -282,7 +282,8 @@ export default function register(api: any) {
     for (let i = 0; i < 4; i++) d.push("KW", "KF");
     return shuffle(d);
   }
-  const clashOk = (s: any, c: string) => c[0] === "K" || c[0] === s.color || c[1] === s.discard[s.discard.length - 1][1];
+  // with stacking on, a pending +2/+4 can only be answered with another +2 (on a +2) or a +4
+  const clashOk = (s: any, c: string) => { const top = s.discard[s.discard.length - 1]; if (s.pend) return c === "KF" || (top[1] === "D" && c[1] === "D"); return c[0] === "K" || c[0] === s.color || c[1] === top[1]; };
   function clashDraw(s: any, seat: number, k: number) {
     for (let i = 0; i < k; i++) {
       if (!s.deck.length) { const t = s.discard.pop(); s.deck = shuffle(s.discard); s.discard = [t]; }
@@ -292,14 +293,14 @@ export default function register(api: any) {
   const clashNext = (s: any, k: number) => { const n = s.hands.length; return (((s.turn + s.dir * k) % n) + n) % n; };
   const clash = {
     name: "Color Clash", min: 2, max: 6,
-    init(n: number) {
+    init(n: number, o: any = {}) {
       const deck = clashDeck(), hands = Array.from({ length: n }, () => deck.splice(0, 7));
       let i = deck.findIndex((c) => /[0-9]/.test(c[1]));
       const top = deck.splice(i, 1)[0];
-      return { deck, discard: [top], hands, turn: 0, dir: 1, color: top[0], drew: false, log: "" };
+      return { deck, discard: [top], hands, turn: 0, dir: 1, color: top[0], drew: false, log: "", pend: 0, stack: !!o.stack, drawTo: !!o.drawTo };
     },
     turn: (s: any) => s.turn,
-    view: (s: any, seat: number) => ({ top: s.discard[s.discard.length - 1], color: s.color, turn: s.turn, dir: s.dir, drew: s.drew, deck: s.deck.length, counts: s.hands.map((h: string[]) => h.length), hand: seat >= 0 ? s.hands[seat] : null, log: s.log }),
+    view: (s: any, seat: number) => ({ top: s.discard[s.discard.length - 1], color: s.color, turn: s.turn, dir: s.dir, drew: s.drew, deck: s.deck.length, counts: s.hands.map((h: string[]) => h.length), hand: seat >= 0 ? s.hands[seat] : null, log: s.log, pend: s.pend || 0, stack: !!s.stack, drawTo: !!s.drawTo }),
     move(s: any, seat: number, m: any) {
       if (s.turn !== seat) return { err: "Not your turn" };
       const hand: string[] = s.hands[seat], n = hand.length;
@@ -316,11 +317,14 @@ export default function register(api: any) {
         const v = m.card[1], np = s.hands.length;
         if (v === "R") { s.dir = -s.dir; s.turn = clashNext(s, np === 2 ? 2 : 1); return {}; }
         if (v === "S") { s.turn = clashNext(s, 2); return {}; }
+        if ((v === "D" || v === "F") && s.stack) { s.pend = (s.pend || 0) + (v === "D" ? 2 : 4); s.turn = clashNext(s, 1); s.log += " · +" + s.pend + " pending"; return {}; }
         if (v === "D" || v === "F") { const vic = clashNext(s, 1); clashDraw(s, vic, v === "D" ? 2 : 4); s.log += " · {" + vic + "} draws " + (v === "D" ? 2 : 4); s.turn = clashNext(s, 2); return {}; }
         s.turn = clashNext(s, 1); return {};
       }
       if (m.action === "draw") {
+        if (s.pend) { const k = s.pend; clashDraw(s, seat, k); s.pend = 0; s.drew = false; s.log = "{" + seat + "} draws " + k; s.turn = clashNext(s, 1); return {}; }
         if (s.drew) return { err: "You already drew — play or pass" };
+        if (s.drawTo) { let k = 0; do { clashDraw(s, seat, 1); k++; } while (k < 25 && s.deck.length && !clashOk(s, hand[hand.length - 1])); s.drew = true; s.log = "{" + seat + "} drew " + k + (k === 1 ? " card" : " cards"); return {}; }
         clashDraw(s, seat, 1); s.drew = true; s.log = "{" + seat + "} drew a card"; return {};
       }
       if (m.action === "pass") {
@@ -334,7 +338,7 @@ export default function register(api: any) {
       const hand: string[] = s.hands[seat], ok = hand.filter((c) => clashOk(s, c));
       const colorCount = (c: string) => hand.filter((x) => x[0] === c).length;
       const bestColor = () => "RGBY".split("").sort((a, b) => colorCount(b) - colorCount(a))[0];
-      if (!ok.length) return s.drew ? { action: "pass" } : { action: "draw" };
+      if (!ok.length) return s.drew && !s.pend ? { action: "pass" } : { action: "draw" };
       if (level === "easy") { const c = rnd(ok); return { action: "play", card: c, color: rnd("RGBY".split("")) }; }
       const nextLeft = s.hands[clashNext(s, 1)].length;
       const score = (c: string) => {
@@ -396,7 +400,7 @@ export default function register(api: any) {
   }
   const hearts = {
     name: "Hearts", min: 4, max: 4,
-    init() { const s: any = { scores: [0, 0, 0, 0], hand: 0, history: [] }; heartsDeal(s); return s; },
+    init(_n: number, o: any = {}) { const s: any = { scores: [0, 0, 0, 0], hand: 0, history: [], target: o.target === 50 ? 50 : 100 }; heartsDeal(s); return s; },
     turn: (s: any) => (s.phase === "play" ? s.turn : null),
     pending: (s: any) => (s.phase === "pass" ? [0, 1, 2, 3].filter((i) => !s.passed[i]) : []),
     view(s: any, seat: number) {
@@ -441,7 +445,7 @@ export default function register(api: any) {
         return {};
       }
       if (s.phase === "handover") {
-        if (Math.max(...s.scores) >= 100) {
+        if (Math.max(...s.scores) >= (s.target || 100)) {
           const lo = Math.min(...s.scores), ws = [0, 1, 2, 3].filter((i) => s.scores[i] === lo);
           s.phase = "done"; s.deadline = 0;
           return { done: true, winner: ws.length === 1 ? ws[0] : null, winners: ws };

@@ -340,8 +340,9 @@ export default function register(api: any) {
   }
   const trivia = {
     name: "Trivia", min: 1, max: 10, noBots: true,
-    init(n: number) {
-      const src = pool.length >= QN ? pool.splice(0, QN) : shuffle(FALLBACK_Q.slice()).slice(0, QN);
+    init(n: number, o: any = {}) {
+      const QN2 = [10, 15, 20].includes(o.count) ? o.count : QN;
+      const src = pool.length >= QN2 ? pool.splice(0, QN2) : shuffle(FALLBACK_Q.slice()).slice(0, QN2);
       if (pool.length < 20) refill();
       const qs = src.map((x) => { const a = shuffle([x.right].concat(x.wrong)); return { q: x.q, a, c: a.indexOf(x.right), cat: x.cat }; });
       return { qs, i: 0, phase: "q", deadline: now() + QT, ans: {}, score: Array(n).fill(0) };
@@ -544,18 +545,26 @@ export default function register(api: any) {
   }
 
   // ---------------- Draw & Guess ----------------
+  const PACKS: Record<string, string[]> = {
+    animals: "cat dog lion tiger zebra giraffe elephant monkey gorilla panda koala kangaroo penguin owl eagle parrot flamingo peacock swan duck chicken rooster cow pig sheep goat horse donkey camel llama deer moose bear wolf fox rabbit squirrel hedgehog mouse rat bat frog turtle snake lizard crocodile shark whale dolphin octopus jellyfish crab lobster snail butterfly bee ant spider ladybug dragonfly seahorse starfish walrus polar_bear sloth hippo rhino".split(" "),
+    food: "pizza burger hotdog taco sushi pasta spaghetti sandwich salad soup pancake waffle donut cupcake cookie cake pie icecream popcorn pretzel croissant bagel cheese egg bacon sausage steak chicken fries noodles dumpling burrito omelette cereal toast honey jam chocolate candy lollipop banana apple orange lemon cherry strawberry grapes watermelon pineapple coconut avocado carrot broccoli corn potato tomato onion garlic mushroom pepper cucumber peanut".split(" "),
+    objects: "chair table lamp clock phone laptop keyboard mouse camera television remote fridge toaster kettle oven spoon fork knife plate cup bottle umbrella backpack suitcase wallet key lock door window ladder hammer screwdriver scissors stapler pencil eraser book glasses watch ring necklace shoe sock hat glove scarf pillow blanket bed mirror toothbrush comb candle broom bucket shovel bicycle skateboard kite balloon trophy guitar drum".split(" "),
+    hard: "gravity democracy nostalgia echo shadow reflection evolution electricity friendship procrastination jealousy wifi password deadline inflation recycling meditation sarcasm teamwork karaoke traffic jam homework hiccup sunburn jetlag blackout firework avalanche eclipse earthquake tide fog rainbow mirage marathon tournament auction elevator escalator vaccine algorithm satellite fossil compass".split(" "),
+    deutsch: "Apfel Banane Hund Katze Haus Baum Auto Fahrrad Schule Lehrer Buch Stift Tisch Stuhl Lampe Uhr Handy Brille Hut Schuh Regenschirm Sonne Mond Stern Wolke Regen Schnee Berg Fluss See Meer Strand Insel Schiff Flugzeug Zug Bahnhof Brücke Burg Schloss Kirche Krone König Drache Ritter Pirat Schatz Schlange Pferd Kuh Schwein Ente Biene Schmetterling Spinne Frosch Igel Eichhörnchen Bär Löwe Elefant Giraffe Affe Pinguin Brezel Würstchen Kuchen Eis Pizza Käse Brot Kaffee Tee Geburtstag Weihnachten Schneemann Rakete Roboter Gitarre Trommel Ballon Kerze".split(" "),
+  };
   const WORDS = "apple banana guitar rocket castle dragon pizza volcano robot penguin rainbow camera island bridge snowman pirate spider ladder candle diamond tornado unicorn jellyfish backpack lighthouse umbrella butterfly octopus helicopter skateboard cactus hamburger mermaid dinosaur telescope compass anchor kangaroo giraffe pyramid igloo waterfall treasure ghost wizard vampire astronaut parachute crown trophy balloon cupcake popcorn sandwich toothbrush keyboard headphones microphone violin drum trumpet bicycle tractor submarine airplane train scissors hammer magnet clock lantern mountain river desert jungle moon star comet planet sun cloud lightning snowflake fire tree flower mushroom leaf pumpkin carrot cherry lemon grapes watermelon cookie donut icecream cheese egg bee owl fish shark whale turtle snail frog rabbit horse cow pig chicken duck lion tiger zebra elephant monkey bear fox wolf bat crab lobster dolphin".split(" ");
   const DRAW_T = 80000;
   function dgStart(s: any) {
-    s.drawer = s.order[s.ri % s.order.length]; s.phase = "pick"; s.choices = shuffle(WORDS.slice()).slice(0, 3); s.word = "";
+    s.drawer = s.order[s.ri % s.order.length]; s.phase = "pick"; s.choices = shuffle((PACKS[s.pack] || WORDS).slice()).slice(0, 3).map((w: string) => w.replace(/_/g, " ")); s.word = "";
     s.strokes = []; s.total = 0; s.v = (s.v || 0) + 1; s.guessed = {}; s.deadline = now() + 12000; s.pts = 0;
   }
   function dgDraw(s: any, i: number) { s.word = s.choices[i] || s.choices[0]; s.phase = "draw"; s.deadline = now() + DRAW_T; s.chat.push({ sys: "{" + s.drawer + "} is drawing!" }); }
   function dgReveal(s: any) { s.phase = "reveal"; s.deadline = now() + 5000; s.chat.push({ sys: "The word was " + s.word.toUpperCase() + "." }); }
   const draw = {
     name: "Draw & Guess", min: 2, max: 8, noBots: true,
-    init(n: number) {
-      const s: any = { order: shuffle([...Array(n).keys()]), ri: 0, rounds: n <= 3 ? n * 2 : n, score: Array(n).fill(0), chat: [] };
+    init(n: number, o: any = {}) {
+      const r = [2, 3, 4].includes(o.rounds) ? o.rounds : 0;
+      const s: any = { order: shuffle([...Array(n).keys()]), ri: 0, rounds: r ? Math.min(24, n * r) : n <= 3 ? n * 2 : n, score: Array(n).fill(0), chat: [], pack: o.pack || "classic" };
       dgStart(s); return s;
     },
     turn: () => null,

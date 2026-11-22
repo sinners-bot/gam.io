@@ -111,6 +111,7 @@
   // ===== sound / haptics =====
   var actx = null;
   function chime(f, vol) {
+    if (window.__gxMute) return;
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       var t = actx.currentTime;
@@ -143,7 +144,7 @@
   function turnFx(g) {
     var mine = !!(g && gameShown() && g.yourTurn);
     document.body.classList.toggle("gx-myturn", mine);
-    if (mine && !wasMine) {
+    if (mine && !wasMine && !window.__gxCalm) {
       var f = document.createElement("div"); f.className = "gx-yt"; f.innerHTML = "<b>YOUR TURN</b>";
       document.body.appendChild(f); setTimeout(function () { f.remove(); }, 1300);
       chime(660, 0.06); try { if (navigator.vibrate) navigator.vibrate(60); } catch (er) {}
@@ -199,7 +200,7 @@
     if (J.gid !== g.id) { J = { gid: g.id, sig: "", pile: [{ c: top, r: 0 }], plog: st.log, hand: [], counts: st.counts.slice(), myRect: null, wild: null, peek: 0 }; }
     if (J.pile[J.pile.length - 1].c !== top || (st.log !== J.plog && /^\{\d+\} played/.test(st.log || ""))) { J.pile.push({ c: top, r: Math.round(Math.random() * 30 - 15) }); if (J.pile.length > 5) J.pile.shift(); }
     J.plog = st.log;
-    var ok = function (c) { return c[0] === "K" || c[0] === st.color || c[1] === top[1]; };
+    var ok = function (c) { if (st.pend) return c === "KF" || (top[1] === "D" && c[1] === "D"); return c[0] === "K" || c[0] === st.color || c[1] === top[1]; };
     var seats = "";
     for (var k = 1; k < n; k++) {
       var i = (me + k) % n, a = (180 + (180 * k) / n) * Math.PI / 180, x = 50 + 44 * Math.cos(a), y = 54 + 46 * Math.sin(a), cnt = st.counts[i], m = Math.min(cnt, 12), fan = "";
@@ -207,8 +208,8 @@
       seats += '<div class="jseat' + (g.turn === i && g.phase === "playing" ? " turn" : "") + (cnt === 1 ? " one" : "") + '" data-seat="' + i + '" style="left:' + x.toFixed(1) + "%;top:" + y.toFixed(1) + '%"><div class="jfan">' + fan + "</div>" + avatar(g.seats[i], 38, COLORS[i]) + '<div class="jsn"><b>' + nmOf(g, i) + '</b><em>' + cnt + "</em></div></div>";
     }
     var pile = J.pile.map(function (p, idx) { return '<div class="jpc" style="--r:' + p.r + 'deg">' + jcard(p.c, idx === J.pile.length - 1 ? " jtop" : "") + "</div>"; }).join("");
-    var deck = '<div class="jdeck' + (mine && !st.drew ? " can" : "") + '" data-act="jdraw">' + jback(" d3") + jback(" d2") + jback(" d1") + "<small>" + st.deck + "</small></div>";
-    var center = '<div class="jcenter"><div class="jring ' + (st.dir > 0 ? "cw" : "ccw") + '" style="--jc:var(--j' + st.color + ')"></div>' + deck + '<div class="jpile">' + pile + '</div><div class="jcol j' + st.color + '">' + JCN[st.color] + "</div></div>";
+    var deck = '<div class="jdeck' + (mine && (!st.drew || st.pend) ? " can" : "") + '" data-act="jdraw">' + jback(" d3") + jback(" d2") + jback(" d1") + "<small>" + st.deck + "</small></div>";
+    var center = '<div class="jcenter"><div class="jring ' + (st.dir > 0 ? "cw" : "ccw") + '" style="--jc:var(--j' + st.color + ')"></div>' + deck + '<div class="jpile">' + pile + '</div><div class="jcol j' + st.color + '">' + JCN[st.color] + "</div>" + (st.pend ? '<div class="jpend">+' + st.pend + "</div>" : "") + "</div>";
     var hand = "";
     if (st.hand) {
       var hn = st.hand.length, occ = {}, vw = window.innerWidth || 1000, cw = vw < 640 ? 70 : 96;
@@ -219,7 +220,7 @@
         return '<div class="jslot" style="--o:' + (idx - (hn - 1) / 2).toFixed(2) + ";z-index:" + idx + '">' + jcard(c, mine ? (ok(c) ? " ok" : " dim") : "", ' data-jcard="' + c + '" data-fk="j:' + c + "#" + occ[c] + '" data-noenter="1" data-noexit="1"') + "</div>";
       }).join("") + "</div>";
     } else if (g.seat < 0) hand = '<p class="hint">Spectating</p>';
-    var hint = g.phase === "playing" ? (mine ? (st.drew ? "Play the card you drew, or pass" : "Your turn! Match the color or symbol, or draw") : g.seat < 0 ? "" : "Waiting for " + nmOf(g, g.turn) + "…") : "";
+    var hint = g.phase === "playing" ? (mine && st.pend ? "+" + st.pend + " is coming your way! Stack another, or draw " + st.pend : mine ? (st.drew ? "Play the card you drew, or pass" : "Your turn! Match the color or symbol, or draw") : g.seat < 0 ? "" : "Waiting for " + nmOf(g, g.turn) + "…") : "";
     var ctrl = mine && st.drew ? '<div class="actions"><button class="btn dark" data-act="jpass">Pass</button></div>' : "";
     var picker = J.wild ? '<div class="modal"><div class="box jpick"><h2>Pick a color</h2><div class="jwheel">' + "RGBY".split("").map(function (c) { return '<button class="j' + c + '" data-act="jcolor" data-c="' + c + '">' + JCN[c] + "</button>"; }).join("") + '</div><button class="btn dark" data-act="jcolor" data-c="">Cancel</button></div></div>' : "";
     return '<div class="jtable">' + seats + center + (st.log ? '<div class="jlog">' + jlog(g, st.log) + "</div>" : "") + "</div>" + '<p class="hint jhint">' + hint + "</p>" + hand + ctrl + picker;
@@ -233,7 +234,7 @@
   function junoAct(a, el) {
     var g = S.game; if (!g || g.type !== "clash" || !g.state) return;
     var mine = g.phase === "playing" && g.turn === g.seat;
-    if (a === "jdraw") { if (mine && !g.state.drew) send({ t: "move", action: "draw" }); else if (mine) toast("You already drew. Play it or pass"); }
+    if (a === "jdraw") { if (mine && (!g.state.drew || g.state.pend)) send({ t: "move", action: "draw" }); else if (mine) toast("You already drew. Play it or pass"); }
     else if (a === "jpass") send({ t: "move", action: "pass" });
     else if (a === "jcolor") { var c = el.getAttribute("data-c"); if (c && J.wild) send({ t: "move", action: "play", card: J.wild, color: c }); else J.myRect = null; J.wild = null; render(); }
     else if (a === "jpeek") { J.peek = g.id; render(); }
@@ -244,7 +245,7 @@
     var g = S.game; if (!g || g.type !== "clash" || !g.state) return;
     if (!(g.phase === "playing" && g.turn === g.seat)) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); return; }
     var c = el.getAttribute("data-jcard"), st = g.state;
-    if (!(c[0] === "K" || c[0] === st.color || c[1] === st.top[1])) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); toast("That card doesn't match"); return; }
+    if (!(st.pend ? c === "KF" || (st.top[1] === "D" && c[1] === "D") : c[0] === "K" || c[0] === st.color || c[1] === st.top[1])) { el.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { duration: 260 }); toast("That card doesn't match"); return; }
     J.myRect = el.getBoundingClientRect();
     if (c[0] === "K") { J.wild = c; render(); } else send({ t: "move", action: "play", card: c });
   }, true);
@@ -262,7 +263,7 @@
   var EASE = "cubic-bezier(.2,.85,.25,1)";
   function rectOf(el) { return el ? el.getBoundingClientRect() : null; }
   function fly(el, from, opts) { // animate el from a previous rect to where it is now
-    if (!el || !from) return;
+    if (!el || !from || window.__gxCalm) return;
     var to = el.getBoundingClientRect(), dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
     var sc = opts && opts.scale != null ? opts.scale : from.width && to.width ? from.width / to.width : 1;
     var base = getComputedStyle(el).transform; base = base === "none" ? "" : base;
@@ -271,12 +272,12 @@
     kf.push({ transform: base || "none" });
     el.animate(kf, { duration: (opts && opts.dur) || 420, easing: EASE, delay: (opts && opts.delay) || 0, fill: "backwards" });
   }
-  function pop(el, delay, dur) { if (el) el.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1.15)", opacity: 1, offset: 0.65 }, { transform: "scale(1)", opacity: 1 }], { duration: dur || 340, easing: "ease-out", delay: delay || 0, fill: "backwards" }); }
+  function pop(el, delay, dur) { if (el && !window.__gxCalm) el.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1.15)", opacity: 1, offset: 0.65 }, { transform: "scale(1)", opacity: 1 }], { duration: dur || 340, easing: "ease-out", delay: delay || 0, fill: "backwards" }); }
   function burst(host, txt, cls) {
-    if (!host) return; var b = document.createElement("div"); b.className = "gx-burst " + (cls || ""); b.innerHTML = txt; host.appendChild(b); setTimeout(function () { b.remove(); }, 1100);
+    if (!host || window.__gxCalm) return; var b = document.createElement("div"); b.className = "gx-burst " + (cls || ""); b.innerHTML = txt; host.appendChild(b); setTimeout(function () { b.remove(); }, 1100);
   }
   function ghostFly(fromRect, toEl, html, delay) { // a temporary card flying between two places on screen
-    if (!fromRect || !toEl) return;
+    if (!fromRect || !toEl || window.__gxCalm) return;
     var to = toEl.getBoundingClientRect(), d = document.createElement("div");
     d.className = "gx-ghost"; d.innerHTML = html; d.style.left = fromRect.left + "px"; d.style.top = fromRect.top + "px";
     document.body.appendChild(d);
@@ -285,6 +286,7 @@
     an.onfinish = function () { d.remove(); };
   }
   function confetti() {
+    if (window.__gxCalm) return;
     var box = document.createElement("div"); box.className = "gx-confetti";
     for (var i = 0; i < 70; i++) { var p = document.createElement("i"); p.style.left = Math.random() * 100 + "%"; p.style.background = COLORS[i % COLORS.length]; p.style.animationDelay = Math.random() * 0.6 + "s"; p.style.animationDuration = 1.6 + Math.random() * 1.4 + "s"; p.style.transform = "rotate(" + Math.random() * 360 + "deg)"; box.appendChild(p); }
     document.body.appendChild(box); setTimeout(function () { box.remove(); }, 3600);
